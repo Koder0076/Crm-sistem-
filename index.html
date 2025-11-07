@@ -1,6 +1,5 @@
-
 <!doctype html>
-<html lang="en">
+<html lang="uk">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -46,35 +45,33 @@
   </div>
 
   <script>
-    
   function searchOrg() {
-  const name = document.getElementById('searchInput').value.trim();
-  const result = document.getElementById('result');
+    const name = document.getElementById('searchInput').value.trim();
+    const result = document.getElementById('result');
 
-  fetch(`https://ecogo-server.onrender.com/search_org?name=${encodeURIComponent(name)}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.error) {
-        result.innerHTML = `<h5 class="text-danger">${data.error}</h5>`;
-      } else {
-        result.innerHTML = `
-          <h5>Організацію знайдено ✅</h5>
-          <p><strong>Назва:</strong> ${data.name}</p>
-          <p><strong>Instagram:</strong> <a href="${data.instagram}" target="_blank">${data.instagram}</a></p>
-          <p><strong>Facebook:</strong> <a href="${data.facebook}" target="_blank">${data.facebook}</a></p>
-          <p><strong>Інше посилання:</strong> <a href="${data.other}" target="_blank">${data.other}</a></p>
-          <p><strong>Телефон:</strong> ${data.phone}</p>
-          <p><strong>Адреса:</strong> ${data.address}</p>
-          <p><strong>Засновник:</strong> ${data.founder}</p>
-          <p><strong>Опис:</strong><br>${data.description}</p>
-        `;
-      }
-    })
-    .catch(err => {
-      result.innerHTML = `<h5 class="text-danger">Помилка при пошуку ❌</h5>`;
-    });
-}
-  
+    fetch(`/search_org?name=${encodeURIComponent(name)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.error) {
+          result.innerHTML = `<h5 class="text-danger">${data.error}</h5>`;
+        } else {
+          result.innerHTML = `
+            <h5>Організацію знайдено ✅</h5>
+            <p><strong>Назва:</strong> ${data.name}</p>
+            <p><strong>Instagram:</strong> <a href="${data.instagram}" target="_blank">${data.instagram}</a></p>
+            <p><strong>Facebook:</strong> <a href="${data.facebook}" target="_blank">${data.facebook}</a></p>
+            <p><strong>Інше посилання:</strong> <a href="${data.other}" target="_blank">${data.other}</a></p>
+            <p><strong>Телефон:</strong> ${data.phone}</p>
+            <p><strong>Адреса:</strong> ${data.address}</p>
+            <p><strong>Засновник:</strong> ${data.founder}</p>
+            <p><strong>Опис:</strong><br>${data.description}</p>
+          `;
+        }
+      })
+      .catch(() => {
+        result.innerHTML = `<h5 class="text-danger">Помилка при пошуку ❌</h5>`;
+      });
+  }
   </script>
 </body>
 </html>

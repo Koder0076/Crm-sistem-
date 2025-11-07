@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="uk">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -31,6 +31,7 @@
 </head>
 <body>
 
+  <!-- Вхід -->
   <div id="loginPage" class="login-container text-center">
     <h3 class="mb-3">Admin Login</h3>
     <input type="password" id="adminPassword" class="form-control mb-3" placeholder="Enter password">
@@ -38,6 +39,7 @@
     <p class="text-danger mt-2" id="errorMsg"></p>
   </div>
 
+  <!-- Адмін сторінка -->
   <div id="adminPage" class="form-container" style="display:none;">
     <h3 class="text-center mb-4">Association of United Organizations Ecogo Pet’s Database</h3>
     <form id="orgForm">
@@ -75,6 +77,8 @@
       </div>
       <button type="submit" class="btn btn-ecogo w-100">Зберегти</button>
     </form>
+
+    <button id="downloadBtn" class="btn btn-secondary mt-3 w-100">📄 Витяг (TXT)</button>
     <p class="text-success mt-3" id="saveMsg"></p>
   </div>
 
@@ -92,7 +96,7 @@
       }
     }
 
-    document.getElementById('orgForm').addEventListener('submit', (e) => {
+    document.getElementById('orgForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const org = {
         name: document.getElementById('orgName').value.trim(),
@@ -105,34 +109,22 @@
         description: document.getElementById('description').value.trim(),
       };
 
-      fetch("https://ecogo-server.onrender.com/add_org", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify(org)
-})
-.then(res => res.json())
-.then(data => {
-  document.getElementById('saveMsg').textContent = data.message;
-})
-.catch(err => {
-  document.getElementById('saveMsg').textContent = "Помилка при збереженні ❌";
-});
+      try {
+        const res = await fetch("/add_org", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(org)
+        });
+        const data = await res.json();
+        document.getElementById('saveMsg').textContent = data.message;
+        e.target.reset();
+      } catch {
+        document.getElementById('saveMsg').textContent = "Помилка при збереженні ❌";
+      }
+    });
 
-      document.getElementById('saveMsg').textContent = "Організацію збережено ✅";
-      e.target.reset();
-
-      // 🔹 SQLite структура (для майбутнього бекенду):
-      // CREATE TABLE organizations (
-      //   id INTEGER PRIMARY KEY AUTOINCREMENT,
-      //   name TEXT,
-      //   instagram TEXT,
-      //   facebook TEXT,
-      //   other TEXT,
-      //   phone TEXT,
-      //   address TEXT,
-      //   founder TEXT,
-      //   description TEXT
-      // );
+    document.getElementById('downloadBtn').addEventListener('click', () => {
+      window.location.href = '/download_all';
     });
   </script>
 </body>
