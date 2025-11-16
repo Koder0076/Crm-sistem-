@@ -8,10 +8,9 @@ const PORT = 3000;
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// створення БД
 const db = new sqlite3.Database('./ecogo.db', (err) => {
   if (err) console.error(err);
-  else console.log('✅ Підключено до SQLite');
+  else console.log('SQLite підключено');
 });
 
 db.run(`
@@ -28,7 +27,6 @@ CREATE TABLE IF NOT EXISTS organizations (
 )
 `);
 
-// додати організацію
 app.post('/add_org', (req, res) => {
   const { name, instagram, facebook, other, phone, address, founder, description } = req.body;
 
@@ -36,31 +34,50 @@ app.post('/add_org', (req, res) => {
     `INSERT INTO organizations (name, instagram, facebook, other, phone, address, founder, description)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     [name, instagram, facebook, other, phone, address, founder, description],
-    function (err) {
-      if (err) res.json({ message: 'Помилка при збереженні ❌' });
+    err => {
+      if (err) res.json({ message: 'Помилка ❌' });
       else res.json({ message: 'Організацію збережено ✅' });
     }
   );
 });
 
-// пошук організації
-app.get('/search_org', (req, res) => {
-  const name = req.query.name;
-  db.get(`SELECT * FROM organizations WHERE name = ?`, [name], (err, row) => {
-    if (err) return res.json({ error: 'Помилка запиту ❌' });
-    if (!row) return res.json({ error: 'Такої організації не знайдено ❌' });
-    res.json(row);
+/* ===== Отримати всі ===== */
+app.get('/get_all', (req, res) => {
+  db.all(`SELECT * FROM organizations`, [], (err, rows) => {
+    if (err) return res.json([]);
+    res.json(rows);
   });
 });
 
-// завантажити всі записи у TXT
+/* ===== Видалити вибрані ===== */
+app.post('/delete_selected', (req, res) => {
+  const ids = req.body.ids;
+
+  if (!ids || ids.length === 0) return res.json({ status: "empty" });
+
+  const placeholders = ids.map(() => '?').join(',');
+
+  db.run(`DELETE FROM organizations WHERE id IN (${placeholders})`, ids, err => {
+    if (err) res.json({ status: "error" });
+    else res.json({ status: "ok" });
+  });
+});
+
+/* ===== Завантажити TXT ===== */
 app.get('/download_all', (req, res) => {
   db.all(`SELECT * FROM organizations`, [], (err, rows) => {
-    if (err) return res.send('Помилка при читанні бази ❌');
+    if (err) return res.send('Помилка ❌');
 
     let content = '=== Ecogo Organizations ===\n\n';
     rows.forEach(r => {
-      content += `Назва: ${r.name}\nInstagram: ${r.instagram}\nFacebook: ${r.facebook}\nІнше: ${r.other}\nТелефон: ${r.phone}\nАдреса: ${r.address}\nЗасновник: ${r.founder}\nОпис: ${r.description}\n\n`;
+      content += `Назва: ${r.name}
+Instagram: ${r.instagram}
+Facebook: ${r.facebook}
+Інше: ${r.other}
+Телефон: ${r.phone}
+Адреса: ${r.address}
+Засновник: ${r.founder}
+Опис: ${r.description}\n\n`;
     });
 
     const filePath = path.join(__dirname, 'organizations.txt');
@@ -69,4 +86,6 @@ app.get('/download_all', (req, res) => {
   });
 });
 
-app.listen(PORT, () => console.log(`🚀 Сервер запущено на http://localhost:${PORT}`));
+app.listen(PORT, () =>
+  console.log(`Сервер працює: http://localhost:${PORT}`)
+);
