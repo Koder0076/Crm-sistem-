@@ -1,0 +1,134 @@
+body {
+    background-color: #000;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden;
+}
+
+.app-container {
+    width: 100%;
+    max-width: 450px;
+    padding: 20px;
+    /* Змінено на темно-зелений градієнт внизу */
+    background: linear-gradient(180deg, #000 60%, #0a2410 100%); 
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.back-btn, .more-btn {
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.section-title {
+    font-size: 22px;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+.section-title .count {
+    color: #555;
+    font-size: 18px;
+}
+
+/* Картка завдання */
+.task-card {
+    background-color: #1c1c1c; /* Трохи глибший колір для контрасту із зеленим */
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.task-card:active {
+    background-color: #252525;
+    transform: scale(0.98);
+}
+
+.task-info {
+    display: flex;
+    align-items: center;
+}
+
+.task-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background-color: #2a2a2a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    margin-right: 15px;
+}
+
+.task-text h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.reward {
+    margin: 4px 0 0 0;
+    color: #fff;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    font-size: 15px;
+}
+
+/* ЗЕЛЕНИЙ АКЦЕНТ: Колір монети та підсвітки */
+.coin {
+    color: #4ade80; /* Яскраво-зелений (Mint/Green) */
+    margin-left: 6px;
+    text-shadow: 0 0 8px rgba(74, 222, 128, 0.4);
+}
+
+.status {
+    margin: 4px 0 0 0;
+    color: #666;
+    font-size: 14px;
+}
+
+.arrow {
+    color: #444;
+    font-size: 24px;
+    font-weight: 300;
+}
+
+.check {
+    color: #4ade80; /* Зелена галочка для виконаних */
+    font-weight: bold;
+}
+
+/* Виконане завдання */
+.completed {
+    opacity: 0.5;
+}
+
+.completed .task-icon {
+    filter: grayscale(1);
+}

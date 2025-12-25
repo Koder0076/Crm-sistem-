@@ -1,96 +1,137 @@
-<!doctype html>
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Анімаційний годинник</title>
+<style>
+    body {
+        margin: 0;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #000;
+        color: #fff;
+        font-family: sans-serif;
+        position: relative;
+    }
+    canvas {
+        display: block;
+        background-color: #000;
+    }
+    #dots {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+    }
+    .dot {
+        width: 12px;
+        height: 12px;
+        background-color: white;
+        border-radius: 50%;
+        opacity: 0;
+        animation: blink 1.5s infinite;
+    }
+    .dot:nth-child(1) { animation-delay: 0s; }
+    .dot:nth-child(2) { animation-delay: 0.5s; }
+    .dot:nth-child(3) { animation-delay: 1s; }
 
-<html lang="uk">  
-<head>  
-  <meta charset="utf-8" />  
-  <meta name="viewport" content="width=device-width,initial-scale=1" />  
-  <title>info.listinh — Головна</title>
-
-  <style>  
-    *{
-      margin:0;
-      padding:0;
-      box-sizing:border-box;
+    @keyframes blink {
+        0%, 20%, 100% { opacity: 0; }
+        50% { opacity: 1; }
     }
 
-    body{
-      font-family:Arial, sans-serif;
+    /* Стиль стрілки у верхньому лівому куті */
+    #backArrow {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        font-size: 2em;
+        color: white;
+        cursor: pointer;
+        transition: transform 0.2s;
+        text-decoration: none;
     }
-
-    /* Кнопка-стрілка */
-    .back-arrow {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      z-index: 9999;
-      text-decoration: none;
-      font-size: 2rem;
-      color: white;
-      background: rgba(0,0,0,0.5);
-      padding: 10px 15px;
-      border-radius: 8px;
-      transition: 0.2s;
+    #backArrow:hover {
+        transform: scale(1.2);
     }
-
-    .back-arrow:hover{
-      background: rgba(0,0,0,0.8);
-    }
-
-    .hero-section{
-      position:relative;
-      min-height:100vh;
-    }
-
-    .hero-section::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      background-size:cover;
-      background-position:center;
-      background-repeat:no-repeat;
-      z-index:0;
-    }
-
-    /* Фото */
-    .top-photo::before{
-      background-image:url('1.png');
-    }
-
-    .bottom-photo::before{
-      background-image:url('2.jpg');
-    }
-
-    /* Блок під другим фото */
-    .after-second{
-      background:black;
-      color:white;
-      padding:40px 20px;
-      text-align:center;
-      font-size:1.4rem;
-    }
-
-    .after-second p{
-      margin-bottom:15px;
-      line-height:1.5;
-    }
-  </style>
+</style>
 </head>
-
 <body>
 
-  <!-- СТРІЛОЧКА НАЗАД -->
-  <a href="index.html" class="back-arrow">←</a>
+<!-- Стрілка для повернення -->
+<a id="backArrow" href="menu.html">&#8592;</a> <!-- ← -->
 
-  <!-- ВЕРХНЄ ФОТО -->
-  <section class="hero-section top-photo"></section>
+<canvas id="clock"></canvas>
+<div id="dots">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+</div>
 
-  <!-- НИЖНЄ ФОТО -->
-  <section class="hero-section bottom-photo"></section>
+<script>
+const canvas = document.getElementById('clock');
+const ctx = canvas.getContext('2d');
 
-  <!-- ЧОРНИЙ ФОН + ТЕКСТ -->
-  <section class="after-second">
-    <p>95% of the tokens will be distributed among users, the remaining information will be announced according to the event calendar.</p>
-  </section>
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight * 0.8;
 
+const centerX = canvas.width / 2;
+const centerY = canvas.height / 2;
+const radius = Math.min(canvas.width, canvas.height) * 0.3;
+
+let angle = 0;
+let particles = [];
+const particleCount = 200;
+let filledParticles = 0;
+
+function animate() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    // Малюємо стрілку
+    ctx.save();
+    ctx.translate(centerX, centerY);
+    ctx.rotate(angle);
+    ctx.strokeStyle = 'white';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+    ctx.lineTo(0,-radius);
+    ctx.stroke();
+    ctx.restore();
+
+    // Додаємо частинки на шляху стрілки
+    if(filledParticles < particleCount) {
+        let pAngle = angle;
+        let px = centerX + Math.sin(pAngle) * radius;
+        let py = centerY - Math.cos(pAngle) * radius;
+        particles.push({x: px, y: py, alpha: 1});
+        filledParticles++;
+    }
+
+    // Малюємо частинки
+    for(let i = 0; i < particles.length; i++) {
+        let p = particles[i];
+        ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
+        ctx.fillRect(p.x-2, p.y-2, 4, 4);
+        p.alpha -= 0.005;
+        if(p.alpha <= 0) { particles.splice(i,1); i--; }
+    }
+
+    angle += (2*Math.PI) / particleCount;
+
+    if(filledParticles >= particleCount) {
+        angle = 0;
+        particles = [];
+        filledParticles = 0;
+    }
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+</script>
 </body>
 </html>

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keep The Ball</title>
+<style>
+body { margin: 0; background: #000; overflow: hidden; }
+canvas { display: block; }
+
+/* pause menu */
+#overlay {
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,.85);
+display: none;
+align-items: center;
+justify-content: center;
+flex-direction: column;
+color: white;
+font-family: monospace;
+z-index: 10;
+}
+button {
+padding: 14px 32px;
+margin: 10px;
+font-size: 18px;
+background: white;
+border: none;
+cursor: pointer;
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="overlay">
+    <h1>PAUSED</h1>
+    <button onclick="resume()">PLAY</button>
+    <button onclick="goMenu()">BACK TO MENU</button>
+</div>
+<script src="game.js"></script>
+</body>
+</html>
