@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Стрічка-повернення</title>
+  <style>
+    :root{
+      --ribbon-bg: #000;
+      --ribbon-text: #fff;
+    }
+    html,body{
+      height:100%; margin:0;
+    }
+    body{
+      background:#000;
+      font-family:system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      color:var(--ribbon-text);
+      display:flex; align-items:center; justify-content:center;
+    }
+
+    /* Рівно зафіксована кнопка вгорі зліва */
+    .corner-ribbon{
+      position:fixed;
+      top:15px;
+      left:0; /* максимально ліворуч */
+      z-index:9999;
+      pointer-events:auto;
+    }
+
+    .corner-ribbon a{
+      display:flex; align-items:center; gap:10px;
+      text-decoration:none;
+      background:var(--ribbon-bg);
+      color:var(--ribbon-text);
+      padding:10px 16px;
+      border-radius:6px;
+      box-shadow:0 6px 18px rgba(0,0,0,0.5);
+      font-weight:600;
+      letter-spacing:0.4px;
+      transition:transform .18s ease, box-shadow .18s ease;
+    }
+
+    .corner-ribbon a:hover,
+    .corner-ribbon a:focus{
+      transform: translateY(-3px);
+      box-shadow:0 10px 24px rgba(0,0,0,0.6);
+    }
+
+    .arrow{
+      width:18px; height:18px;
+      flex:0 0 18px;
+    }
+
+    @media (max-width:420px){
+      .corner-ribbon a{ padding:8px 12px; font-size:14px; }
+      .arrow{ width:16px; height:16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="corner-ribbon">
+    <a href="index.html" aria-label="Повернутися на головну (index.html)">
+      <svg class="arrow" viewBox="0 0 24 24" fill="none"
+           xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M15 6L9 12L15 18"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"/>
+      </svg>
+      <span>Back</span>
+    </a>
+  </div>
+
+  <main>
+    <h1 style="color:#fff; font-size:20px;">Чорний фон сторінки</h1>
+    <p style="color:rgba(255,255,255,0.7);">
+      Це приклад сторінки з чіткою кнопкою повернення у верхньому лівому куті.
+    </p>
+  </main>
+
+</body>
+</html>

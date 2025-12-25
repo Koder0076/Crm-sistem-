@@ -1,0 +1,96 @@
+<!doctype html>
+
+<html lang="uk">  
+<head>  
+  <meta charset="utf-8" />  
+  <meta name="viewport" content="width=device-width,initial-scale=1" />  
+  <title>info.listinh — Головна</title>
+
+  <style>  
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+    }
+
+    body{
+      font-family:Arial, sans-serif;
+    }
+
+    /* Кнопка-стрілка */
+    .back-arrow {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 9999;
+      text-decoration: none;
+      font-size: 2rem;
+      color: white;
+      background: rgba(0,0,0,0.5);
+      padding: 10px 15px;
+      border-radius: 8px;
+      transition: 0.2s;
+    }
+
+    .back-arrow:hover{
+      background: rgba(0,0,0,0.8);
+    }
+
+    .hero-section{
+      position:relative;
+      min-height:100vh;
+    }
+
+    .hero-section::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background-size:cover;
+      background-position:center;
+      background-repeat:no-repeat;
+      z-index:0;
+    }
+
+    /* Фото */
+    .top-photo::before{
+      background-image:url('1.png');
+    }
+
+    .bottom-photo::before{
+      background-image:url('2.jpg');
+    }
+
+    /* Блок під другим фото */
+    .after-second{
+      background:black;
+      color:white;
+      padding:40px 20px;
+      text-align:center;
+      font-size:1.4rem;
+    }
+
+    .after-second p{
+      margin-bottom:15px;
+      line-height:1.5;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- СТРІЛОЧКА НАЗАД -->
+  <a href="index.html" class="back-arrow">←</a>
+
+  <!-- ВЕРХНЄ ФОТО -->
+  <section class="hero-section top-photo"></section>
+
+  <!-- НИЖНЄ ФОТО -->
+  <section class="hero-section bottom-photo"></section>
+
+  <!-- ЧОРНИЙ ФОН + ТЕКСТ -->
+  <section class="after-second">
+    <p>95% of the tokens will be distributed among users, the remaining information will be announced according to the event calendar.</p>
+  </section>
+
+</body>
+</html>
