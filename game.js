@@ -140,7 +140,7 @@ function update() {
 // === VIDEO CONTROL ===
 function startVideo() {
     video.play();
-    video.onended = () => location.href = "menu.html";
+    video.onended = () => location.href = "index.html";
 }
 
 // === MENU ===
@@ -152,7 +152,7 @@ function resume() {
 }
 
 function goMenu() {
-    location.href = "menu.html";
+    location.href = "index.html";
 }
 
 img.onload = () => {
