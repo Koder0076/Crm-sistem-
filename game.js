@@ -2,8 +2,6 @@ const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
 const overlay = document.getElementById("overlay");
-const videoScreen = document.getElementById("videoScreen");
-const video = document.getElementById("loseVideo");
 
 canvas.width = innerWidth;
 canvas.height = innerHeight;
@@ -18,7 +16,7 @@ const ball = {
     speedUp: 0.8
 };
 
-// === PLATFORM (ЗАВЖДИ ВНИЗУ) ===
+// === PLATFORM ===
 const platform = {
     w: 130,
     h: 14,
@@ -26,12 +24,12 @@ const platform = {
     y: canvas.height - 40
 };
 
-// 🔥 target для вільного руху
 let targetX = platform.x;
 
 let lives = 3;
 let score = 0;
 let running = true;
+let scoreSaved = false; // ✅ ФЛАГ
 
 // === RESET BALL ===
 function resetBall() {
@@ -41,7 +39,7 @@ function resetBall() {
     ball.vy = 6;
 }
 
-// === CONTROLS (ВІЛЬНИЙ РУХ) ===
+// === CONTROLS ===
 addEventListener("mousemove", e => {
     targetX = e.clientX - platform.w / 2;
 });
@@ -55,16 +53,20 @@ function randomAngle() {
     return Math.random() * (Math.PI / 2) + Math.PI / 4;
 }
 
-// === SAVE SCORE FUNCTION ===
+// === SAVE SCORE (ОДИН РАЗ) ===
 function saveScore() {
+    if (scoreSaved) return;
+
     const email = localStorage.getItem("email");
-    if (!email) return;
+    if (!email || score <= 0) return;
+
+    scoreSaved = true;
 
     fetch("http://localhost:3000/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, score })
-    }).catch(err => console.error(err));
+    }).catch(() => {});
 }
 
 // === GAME LOOP ===
@@ -73,9 +75,7 @@ function update() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // ✅ ВІЛЬНИЙ рух платформи
     platform.x += (targetX - platform.x);
-
     if (platform.x < 0) platform.x = 0;
     if (platform.x + platform.w > canvas.width)
         platform.x = canvas.width - platform.w;
@@ -83,11 +83,9 @@ function update() {
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    // walls
     if (ball.x - ball.r < 0 || ball.x + ball.r > canvas.width) ball.vx *= -1;
     if (ball.y - ball.r < 0) ball.vy *= -1;
 
-    // platform collision
     if (
         ball.y + ball.r >= platform.y &&
         ball.x > platform.x &&
@@ -108,7 +106,7 @@ function update() {
         lives--;
         running = false;
 
-        saveScore(); // <-- зберігаємо очки на сервер
+        saveScore(); // ✅ ЗАПИС У БД
 
         if (lives > 0) {
             overlay.style.display = "flex";
@@ -125,11 +123,9 @@ function update() {
     ctx.drawImage(img, ball.x - ball.r, ball.y - ball.r, ball.r * 2, ball.r * 2);
     ctx.restore();
 
-    // platform
     ctx.fillStyle = "#fff";
     ctx.fillRect(platform.x, platform.y, platform.w, platform.h);
 
-    // UI
     ctx.font = "bold 26px Arial";
     ctx.fillText("Score: " + score, 20, 40);
     ctx.fillText("❤".repeat(lives), canvas.width - 100, 40);
@@ -137,16 +133,11 @@ function update() {
     requestAnimationFrame(update);
 }
 
-// === VIDEO CONTROL ===
-function startVideo() {
-    video.play();
-    video.onended = () => location.href = "index.html";
-}
-
 // === MENU ===
 function resume() {
     overlay.style.display = "none";
     resetBall();
+    scoreSaved = false; // ✅ СКИД
     running = true;
     update();
 }

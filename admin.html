@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<title>ADMIN</title>
+<style>
+body {
+    background:#000;
+    color:#0f0;
+    font-family:monospace;
+    padding:20px;
+}
+input, button {
+    padding:10px;
+    margin:5px 0;
+    width:100%;
+}
+table {
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+}
+td, th {
+    border:1px solid #0f0;
+    padding:6px;
+}
+</style>
+</head>
+<body>
+
+<h2>🔐 ADMIN LOGIN</h2>
+<input id="pass" type="password" placeholder="Password">
+<button onclick="login()">LOGIN</button>
+
+<div id="panel" style="display:none">
+    <h2>👑 USERS</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>User</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody id="users"></tbody>
+    </table>
+</div>
+
+<script>
+function login() {
+    const password = pass.value;
+
+    fetch("/admin/login", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ password })
+    })
+    .then(r => {
+        if (!r.ok) throw 0;
+        document.getElementById("panel").style.display = "block";
+        loadUsers(password);
+    })
+    .catch(() => alert("WRONG PASSWORD"));
+}
+
+function loadUsers(password) {
+    fetch("/admin/users", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ password })
+    })
+    .then(r => r.json())
+    .then(data => {
+        users.innerHTML = "";
+        data.forEach(u => {
+            users.innerHTML += `
+            <tr>
+                <td>${u.id}</td>
+                <td>${u.email}</td>
+                <td>${u.user}</td>
+                <td>${u.score}</td>
+            </tr>`;
+        });
+    });
+}
+</script>
+
+</body>
+</html>

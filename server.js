@@ -2,16 +2,19 @@ const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
 const bodyParser = require("body-parser");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
-const PORT = 3000;
-const db = new sqlite3.Database("./users.db");
+const PORT = process.env.PORT || 3000;
+const ADMIN_PASSWORD = "dandelion0514";
+
+// Render-safe DB path
+const db = new sqlite3.Database(path.join(__dirname, "users.db"));
 
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.static("public"));
 
-// Таблиця з додатковим полем score
 db.run(`
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -21,48 +24,58 @@ CREATE TABLE IF NOT EXISTS users (
 )
 `);
 
-// Перевірка користувача
-app.post("/check", (req, res) => {
-    const { email } = req.body;
-    db.get("SELECT * FROM users WHERE email = ?", [email], (err, row) => {
-        if (row) res.json({ exists: true, user: row });
-        else res.json({ exists: false });
-    });
-});
-
-// Реєстрація
+// ===== REGISTER =====
 app.post("/register", (req, res) => {
     const { email, user } = req.body;
     db.run(
         "INSERT INTO users (email, user) VALUES (?, ?)",
         [email, user],
-        function () {
+        function (err) {
+            if (err) return res.status(400).json({ error: "exists" });
             res.json({ id: this.lastID });
         }
     );
 });
 
-// Оновлення очок
-app.post("/score", (req, res) => {
-    const { email, score } = req.body;
-    db.run(
-        "UPDATE users SET score = ? WHERE email = ?",
-        [score, email],
-        function(err) {
-            if (err) res.status(500).send("Помилка оновлення очок");
-            else res.send("Очки оновлено");
-        }
+// ===== GET SCORE =====
+app.get("/score/:email", (req, res) => {
+    db.get(
+        "SELECT score FROM users WHERE email = ?",
+        [req.params.email],
+        (_, row) => res.json({ score: row ? row.score : 0 })
     );
 });
 
-// Отримати очки користувача
-app.get("/score/:email", (req, res) => {
-    const email = req.params.email;
-    db.get("SELECT score FROM users WHERE email = ?", [email], (err, row) => {
-        if (err) res.status(500).send("Помилка бази");
-        else res.json({ score: row ? row.score : 0 });
+// ===== SAVE SCORE =====
+app.post("/score", (req, res) => {
+    const { email, score } = req.body;
+    db.run(
+        "UPDATE users SET score = score + ? WHERE email = ?",
+        [score, email],
+        () => res.json({ ok: true })
+    );
+});
+
+// ===== ADMIN LOGIN =====
+app.post("/admin/login", (req, res) => {
+    if (req.body.password === ADMIN_PASSWORD) {
+        res.json({ ok: true });
+    } else {
+        res.status(401).json({ ok: false });
+    }
+});
+
+// ===== ADMIN USERS (PROTECTED) =====
+app.post("/admin/users", (req, res) => {
+    if (req.body.password !== ADMIN_PASSWORD) {
+        return res.status(403).json({ error: "forbidden" });
+    }
+
+    db.all("SELECT * FROM users", [], (_, rows) => {
+        res.json(rows);
     });
 });
 
-// Запуск сервера
-app.listen(PORT, () => console.log(`✅ Сервер запущено на http://localhost:${PORT}`));
+app.listen(PORT, () =>
+    console.log(`✅ Server running on port ${PORT}`)
+);
