@@ -8,13 +8,21 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = "dandelion0514";
 
-// Render-safe DB path
+// DB в корені (Render-safe)
 const db = new sqlite3.Database(path.join(__dirname, "users.db"));
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static("public"));
 
+// ✅ СТАТИКА З КОРЕНЯ ПРОЄКТУ
+app.use(express.static(__dirname));
+
+// ✅ ГОЛОВНА СТОРІНКА
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "index.html"));
+});
+
+// ===== DB INIT =====
 db.run(`
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -65,7 +73,7 @@ app.post("/admin/login", (req, res) => {
     }
 });
 
-// ===== ADMIN USERS (PROTECTED) =====
+// ===== ADMIN USERS =====
 app.post("/admin/users", (req, res) => {
     if (req.body.password !== ADMIN_PASSWORD) {
         return res.status(403).json({ error: "forbidden" });
