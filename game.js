@@ -62,11 +62,19 @@ function saveScore() {
 
     scoreSaved = true;
 
-    fetch("http://localhost:3000/score", {
+    fetch("/score", { // Відносний шлях, щоб працювало на Render
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, score })
-    }).catch(() => {});
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Score saved:", data);
+        // Після збереження оновлюємо головну сторінку
+        const pointsElem = document.querySelector(".points");
+        if (pointsElem) pointsElem.textContent = score;
+    })
+    .catch(err => console.error(err));
 }
 
 // === GAME LOOP ===
