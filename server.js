@@ -12,15 +12,13 @@ const db = new sqlite3.Database(path.join(__dirname, "users.db"));
 
 app.use(cors());
 app.use(bodyParser.json());
-
-// ✅ ВАЖЛИВО: всі файли в корені
 app.use(express.static(__dirname));
 
-// ✅ Головна сторінка
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
+// Таблиця користувачів
 db.run(`
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -30,63 +28,39 @@ CREATE TABLE IF NOT EXISTS users (
 )
 `);
 
-// ===== REGISTER =====
+// Реєстрація
 app.post("/register", (req, res) => {
     const { email, user } = req.body;
+    if (!email || !user) return res.status(400).json({ error: "missing_data" });
 
-    if (!email || !user) {
-        return res.status(400).json({ error: "missing_data" });
-    }
-
-    db.run(
-        "INSERT INTO users (email, user) VALUES (?, ?)",
-        [email, user],
-        function (err) {
-            if (err) return res.status(400).json({ error: "exists" });
-            res.json({ ok: true, id: this.lastID });
-        }
-    );
-});
-
-// ===== GET SCORE =====
-app.get("/score/:email", (req, res) => {
-    db.get(
-        "SELECT score FROM users WHERE email = ?",
-        [req.params.email],
-        (_, row) => res.json({ score: row ? row.score : 0 })
-    );
-});
-
-// ===== SAVE SCORE =====
-app.post("/score", (req, res) => {
-    const { email, score } = req.body;
-    db.run(
-        "UPDATE users SET score = score + ? WHERE email = ?",
-        [score, email],
-        () => res.json({ ok: true })
-    );
-});
-
-// ===== ADMIN LOGIN =====
-app.post("/admin/login", (req, res) => {
-    if (req.body.password === ADMIN_PASSWORD) {
-        res.json({ ok: true });
-    } else {
-        res.status(401).json({ ok: false });
-    }
-});
-
-// ===== ADMIN USERS =====
-app.post("/admin/users", (req, res) => {
-    if (req.body.password !== ADMIN_PASSWORD) {
-        return res.status(403).json({ error: "forbidden" });
-    }
-
-    db.all("SELECT * FROM users", [], (_, rows) => {
-        res.json(rows);
+    db.run("INSERT INTO users (email, user) VALUES (?, ?)", [email, user], function(err) {
+        if (err) return res.status(400).json({ error: "exists" });
+        res.json({ ok: true, id: this.lastID });
     });
 });
 
-app.listen(PORT, () =>
-    console.log(`✅ Server running on port ${PORT}`)
-);
+// Очки користувача
+app.get("/score/:email", (req, res) => {
+    db.get("SELECT score FROM users WHERE email = ?", [req.params.email], (_, row) => {
+        res.json({ score: row ? row.score : 0 });
+    });
+});
+
+// Збереження очок
+app.post("/score", (req, res) => {
+    const { email, score } = req.body;
+    db.run("UPDATE users SET score = score + ? WHERE email = ?", [score, email], () => res.json({ ok: true }));
+});
+
+// Адмінка
+app.post("/admin/login", (req, res) => {
+    if (req.body.password === ADMIN_PASSWORD) res.json({ ok: true });
+    else res.status(401).json({ ok: false });
+});
+
+app.post("/admin/users", (req, res) => {
+    if (req.body.password !== ADMIN_PASSWORD) return res.status(403).json({ error: "forbidden" });
+    db.all("SELECT * FROM users", [], (_, rows) => res.json(rows));
+});
+
+app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));

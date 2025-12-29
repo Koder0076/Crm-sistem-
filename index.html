@@ -180,6 +180,9 @@ const app = document.getElementById("app");
 const uid = document.getElementById("uid");
 const pointsElem = document.querySelector(".points");
 
+const emailInput = document.getElementById("email");
+const userInput = document.getElementById("user");
+
 const savedEmail = localStorage.getItem("email");
 
 if (!savedEmail) {
@@ -189,17 +192,15 @@ if (!savedEmail) {
     modal.style.display = "none";
 
     // Підтягуємо очки з сервера
-    fetch(`http://localhost:3000/score/${savedEmail}`)
+    fetch(`/score/${savedEmail}`)
         .then(res => res.json())
-        .then(data => {
-            pointsElem.textContent = data.score;
-        })
+        .then(data => pointsElem.textContent = data.score)
         .catch(err => console.error(err));
 }
 
 function register() {
-    const e = email.value.trim();
-    const u = user.value.trim();
+    const e = emailInput.value.trim();
+    const u = userInput.value.trim();
 
     if (!e || !u) {
         alert("Заповни всі поля");
@@ -207,24 +208,28 @@ function register() {
     }
 
     // Відправка на сервер для реєстрації
-    fetch("http://localhost:3000/register", {
+    fetch("/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: e, user: u })
     })
     .then(res => res.json())
     .then(data => {
-        localStorage.setItem("email", e);
-        localStorage.setItem("uid", data.id);
-        uid.textContent = "ID: " + data.id;
-        modal.style.display = "none";
-        app.classList.remove("blur");
+        if (data.ok) {
+            localStorage.setItem("email", e);
+            localStorage.setItem("uid", data.id);
+            uid.textContent = "ID: " + data.id;
+            modal.style.display = "none";
+            app.classList.remove("blur");
 
-        // Підтягуємо очки (буде 0 при новому користувачі)
-        fetch(`http://localhost:3000/score/${e}`)
-            .then(res => res.json())
-            .then(d => pointsElem.textContent = d.score)
-            .catch(err => console.error(err));
+            // Підтягуємо очки (буде 0 при новому користувачі)
+            fetch(`/score/${e}`)
+                .then(res => res.json())
+                .then(d => pointsElem.textContent = d.score)
+                .catch(err => console.error(err));
+        } else if (data.error === "exists") {
+            alert("Користувач вже існує");
+        }
     })
     .catch(err => console.error(err));
 }
