@@ -8,21 +8,19 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = "dandelion0514";
 
-// DB в корені (Render-safe)
 const db = new sqlite3.Database(path.join(__dirname, "users.db"));
 
 app.use(cors());
 app.use(bodyParser.json());
 
-// ✅ СТАТИКА З КОРЕНЯ ПРОЄКТУ
+// ✅ ВАЖЛИВО: всі файли в корені
 app.use(express.static(__dirname));
 
-// ✅ ГОЛОВНА СТОРІНКА
+// ✅ Головна сторінка
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ===== DB INIT =====
 db.run(`
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,12 +33,17 @@ CREATE TABLE IF NOT EXISTS users (
 // ===== REGISTER =====
 app.post("/register", (req, res) => {
     const { email, user } = req.body;
+
+    if (!email || !user) {
+        return res.status(400).json({ error: "missing_data" });
+    }
+
     db.run(
         "INSERT INTO users (email, user) VALUES (?, ?)",
         [email, user],
         function (err) {
             if (err) return res.status(400).json({ error: "exists" });
-            res.json({ id: this.lastID });
+            res.json({ ok: true, id: this.lastID });
         }
     );
 });
