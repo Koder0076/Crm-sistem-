@@ -1,14 +1,18 @@
 const express = require("express");
-const sqlite3 = require("sqlite3").verbose();
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const path = require("path");
+const { Pool } = require("pg");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = "dandelion0514";
 
-const db = new sqlite3.Database(path.join(__dirname, "users.db"));
+// ✅ PostgreSQL (Render)
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+});
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -18,82 +22,68 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// ===== TABLE =====
-db.run(`
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE,
-    user TEXT,
-    score INTEGER DEFAULT 0
-)
-`);
+// ===== INIT DB =====
+async function initDB() {
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            email TEXT UNIQUE,
+            username TEXT,
+            score INTEGER DEFAULT 0
+        )
+    `);
+    console.log("✅ DB ready");
+}
+initDB();
 
 // ===== REGISTER =====
-app.post("/register", (req, res) => {
+app.post("/register", async (req, res) => {
     const { email, user } = req.body;
-    if (!email || !user)
-        return res.status(400).json({ error: "missing_data" });
-
-    db.run(
-        "INSERT INTO users (email, user) VALUES (?, ?)",
-        [email, user],
-        function (err) {
-            if (err)
-                return res.status(400).json({ error: "exists" });
-
-            res.json({ ok: true, id: this.lastID });
-        }
-    );
+    try {
+        const result = await pool.query(
+            "INSERT INTO users (email, username) VALUES ($1, $2) RETURNING id",
+            [email, user]
+        );
+        res.json({ ok: true, id: result.rows[0].id });
+    } catch (err) {
+        console.error(err.message);
+        res.status(400).json({ error: "exists" });
+    }
 });
 
 // ===== GET SCORE BY ID =====
-app.get("/score/:id", (req, res) => {
-    db.get(
-        "SELECT score FROM users WHERE id = ?",
-        [req.params.id],
-        (err, row) => {
-            if (err)
-                return res.status(500).json({ error: "db_error" });
-
-            res.json({ score: row ? row.score : 0 });
-        }
+app.get("/score/:id", async (req, res) => {
+    const result = await pool.query(
+        "SELECT score FROM users WHERE id = $1",
+        [req.params.id]
     );
+    res.json({ score: result.rows[0]?.score || 0 });
 });
 
-// ===== ADD SCORE BY ID =====
-app.post("/score", (req, res) => {
+// ===== ADD SCORE =====
+app.post("/score", async (req, res) => {
     const { id, score } = req.body;
 
-    db.run(
-        "UPDATE users SET score = score + ? WHERE id = ?",
-        [score, id],
-        function (err) {
-            if (err)
-                return res.status(500).json({ error: "db_error" });
-
-            if (this.changes === 0)
-                return res.status(404).json({ error: "user_not_found" });
-
-            res.json({ ok: true });
-        }
+    const result = await pool.query(
+        "UPDATE users SET score = score + $1 WHERE id = $2 RETURNING score",
+        [score, id]
     );
+
+    if (result.rowCount === 0)
+        return res.status(404).json({ error: "user_not_found" });
+
+    res.json({ ok: true });
 });
 
 // ===== ADMIN =====
-app.post("/admin/login", (req, res) => {
-    if (req.body.password === ADMIN_PASSWORD)
-        res.json({ ok: true });
-    else
-        res.status(401).json({ ok: false });
-});
-
-app.post("/admin/users", (req, res) => {
+app.post("/admin/users", async (req, res) => {
     if (req.body.password !== ADMIN_PASSWORD)
         return res.status(403).json({ error: "forbidden" });
 
-    db.all("SELECT * FROM users", [], (_, rows) => res.json(rows));
+    const result = await pool.query("SELECT * FROM users ORDER BY id DESC");
+    res.json(result.rows);
 });
 
 app.listen(PORT, () =>
-    console.log(`✅ Server running on port ${PORT}`)
+    console.log(`🚀 Server running on ${PORT}`)
 );
