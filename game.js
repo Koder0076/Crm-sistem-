@@ -1,22 +1,18 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-
 const overlay = document.getElementById("overlay");
 
 canvas.width = innerWidth;
 canvas.height = innerHeight;
 
-// === IMAGE BALL ===
+// IMAGE
 const img = new Image();
 img.src = "0.png";
 
-// === BALL ===
-const ball = {
-    r: 16,
-    speedUp: 0.8
-};
+// BALL
+const ball = { r: 16, speedUp: 0.8 };
 
-// === PLATFORM ===
+// PLATFORM
 const platform = {
     w: 130,
     h: 14,
@@ -25,13 +21,11 @@ const platform = {
 };
 
 let targetX = platform.x;
-
 let lives = 3;
 let score = 0;
 let running = true;
-let scoreSaved = false; // ✅ ФЛАГ
 
-// === RESET BALL ===
+// RESET BALL
 function resetBall() {
     ball.x = canvas.width / 2;
     ball.y = canvas.height / 3;
@@ -39,7 +33,7 @@ function resetBall() {
     ball.vy = 6;
 }
 
-// === CONTROLS ===
+// CONTROLS
 addEventListener("mousemove", e => {
     targetX = e.clientX - platform.w / 2;
 });
@@ -48,52 +42,42 @@ addEventListener("touchmove", e => {
     targetX = e.touches[0].clientX - platform.w / 2;
 }, { passive: true });
 
-// === RANDOM ANGLE ===
+// SAVE +1 SCORE (ID)
+function saveScoreIncrement(value) {
+    const uid = localStorage.getItem("uid");
+    if (!uid) return;
+
+    fetch("/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: uid, score: value })
+    }).catch(console.error);
+}
+
+// RANDOM ANGLE
 function randomAngle() {
     return Math.random() * (Math.PI / 2) + Math.PI / 4;
 }
 
-// === SAVE SCORE (ОДИН РАЗ) ===
-function saveScore() {
-    if (scoreSaved) return;
-
-    const email = localStorage.getItem("email");
-    if (!email || score <= 0) return;
-
-    scoreSaved = true;
-
-    fetch("/score", { // Відносний шлях, щоб працювало на Render
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, score })
-    })
-    .then(res => res.json())
-    .then(data => {
-        console.log("Score saved:", data);
-        // Після збереження оновлюємо головну сторінку
-        const pointsElem = document.querySelector(".points");
-        if (pointsElem) pointsElem.textContent = score;
-    })
-    .catch(err => console.error(err));
-}
-
-// === GAME LOOP ===
+// GAME LOOP
 function update() {
     if (!running) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     platform.x += (targetX - platform.x);
-    if (platform.x < 0) platform.x = 0;
-    if (platform.x + platform.w > canvas.width)
-        platform.x = canvas.width - platform.w;
+    platform.x = Math.max(0, Math.min(canvas.width - platform.w, platform.x));
 
     ball.x += ball.vx;
     ball.y += ball.vy;
 
-    if (ball.x - ball.r < 0 || ball.x + ball.r > canvas.width) ball.vx *= -1;
-    if (ball.y - ball.r < 0) ball.vy *= -1;
+    if (ball.x - ball.r < 0 || ball.x + ball.r > canvas.width)
+        ball.vx *= -1;
 
+    if (ball.y - ball.r < 0)
+        ball.vy *= -1;
+
+    // HIT
     if (
         ball.y + ball.r >= platform.y &&
         ball.x > platform.x &&
@@ -107,14 +91,13 @@ function update() {
         ball.vy = -Math.sin(angle) * speed;
 
         score++;
+        saveScoreIncrement(1); // ✅ ГОЛОВНЕ
     }
 
-    // ❌ MISS
+    // MISS
     if (ball.y - ball.r > platform.y + platform.h) {
         lives--;
         running = false;
-
-        saveScore(); // ✅ ЗАПИС У БД
 
         if (lives > 0) {
             overlay.style.display = "flex";
@@ -123,7 +106,7 @@ function update() {
         }
     }
 
-    // draw ball
+    // DRAW
     ctx.save();
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
@@ -141,11 +124,10 @@ function update() {
     requestAnimationFrame(update);
 }
 
-// === MENU ===
+// MENU
 function resume() {
     overlay.style.display = "none";
     resetBall();
-    scoreSaved = false; // ✅ СКИД
     running = true;
     update();
 }

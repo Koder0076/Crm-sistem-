@@ -177,22 +177,23 @@ body {
 <script>
 const modal = document.getElementById("modal");
 const app = document.getElementById("app");
-const uid = document.getElementById("uid");
+const uidElem = document.getElementById("uid");
 const pointsElem = document.querySelector(".points");
 
 const emailInput = document.getElementById("email");
 const userInput = document.getElementById("user");
 
-const savedEmail = localStorage.getItem("email");
+// ✅ ПРАЦЮЄМО ПО ID
+const uid = localStorage.getItem("uid");
 
-if (!savedEmail) {
+if (!uid) {
     app.classList.add("blur");
 } else {
-    uid.textContent = "ID: " + localStorage.getItem("uid");
+    uidElem.textContent = "ID: " + uid;
     modal.style.display = "none";
 
-    // Підтягуємо очки з сервера
-    fetch(`/score/${savedEmail}`)
+    // ✅ Отримуємо score по ID
+    fetch(`/score/${uid}`)
         .then(res => res.json())
         .then(data => pointsElem.textContent = data.score)
         .catch(err => console.error(err));
@@ -207,7 +208,6 @@ function register() {
         return;
     }
 
-    // Відправка на сервер для реєстрації
     fetch("/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -216,14 +216,16 @@ function register() {
     .then(res => res.json())
     .then(data => {
         if (data.ok) {
-            localStorage.setItem("email", e);
+            // ✅ ЗБЕРІГАЄМО ID
             localStorage.setItem("uid", data.id);
-            uid.textContent = "ID: " + data.id;
+            localStorage.setItem("email", e); // лишається як інфо
+
+            uidElem.textContent = "ID: " + data.id;
             modal.style.display = "none";
             app.classList.remove("blur");
 
-            // Підтягуємо очки (буде 0 при новому користувачі)
-            fetch(`/score/${e}`)
+            // ✅ ОТРИМУЄМО SCORE ПО ID
+            fetch(`/score/${data.id}`)
                 .then(res => res.json())
                 .then(d => pointsElem.textContent = d.score)
                 .catch(err => console.error(err));

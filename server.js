@@ -18,7 +18,7 @@ app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "index.html"));
 });
 
-// Таблиця користувачів
+// ===== TABLE =====
 db.run(`
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -28,39 +28,72 @@ CREATE TABLE IF NOT EXISTS users (
 )
 `);
 
-// Реєстрація
+// ===== REGISTER =====
 app.post("/register", (req, res) => {
     const { email, user } = req.body;
-    if (!email || !user) return res.status(400).json({ error: "missing_data" });
+    if (!email || !user)
+        return res.status(400).json({ error: "missing_data" });
 
-    db.run("INSERT INTO users (email, user) VALUES (?, ?)", [email, user], function(err) {
-        if (err) return res.status(400).json({ error: "exists" });
-        res.json({ ok: true, id: this.lastID });
-    });
+    db.run(
+        "INSERT INTO users (email, user) VALUES (?, ?)",
+        [email, user],
+        function (err) {
+            if (err)
+                return res.status(400).json({ error: "exists" });
+
+            res.json({ ok: true, id: this.lastID });
+        }
+    );
 });
 
-// Очки користувача
-app.get("/score/:email", (req, res) => {
-    db.get("SELECT score FROM users WHERE email = ?", [req.params.email], (_, row) => {
-        res.json({ score: row ? row.score : 0 });
-    });
+// ===== GET SCORE BY ID =====
+app.get("/score/:id", (req, res) => {
+    db.get(
+        "SELECT score FROM users WHERE id = ?",
+        [req.params.id],
+        (err, row) => {
+            if (err)
+                return res.status(500).json({ error: "db_error" });
+
+            res.json({ score: row ? row.score : 0 });
+        }
+    );
 });
 
-// Збереження очок
+// ===== ADD SCORE BY ID =====
 app.post("/score", (req, res) => {
-    const { email, score } = req.body;
-    db.run("UPDATE users SET score = score + ? WHERE email = ?", [score, email], () => res.json({ ok: true }));
+    const { id, score } = req.body;
+
+    db.run(
+        "UPDATE users SET score = score + ? WHERE id = ?",
+        [score, id],
+        function (err) {
+            if (err)
+                return res.status(500).json({ error: "db_error" });
+
+            if (this.changes === 0)
+                return res.status(404).json({ error: "user_not_found" });
+
+            res.json({ ok: true });
+        }
+    );
 });
 
-// Адмінка
+// ===== ADMIN =====
 app.post("/admin/login", (req, res) => {
-    if (req.body.password === ADMIN_PASSWORD) res.json({ ok: true });
-    else res.status(401).json({ ok: false });
+    if (req.body.password === ADMIN_PASSWORD)
+        res.json({ ok: true });
+    else
+        res.status(401).json({ ok: false });
 });
 
 app.post("/admin/users", (req, res) => {
-    if (req.body.password !== ADMIN_PASSWORD) return res.status(403).json({ error: "forbidden" });
+    if (req.body.password !== ADMIN_PASSWORD)
+        return res.status(403).json({ error: "forbidden" });
+
     db.all("SELECT * FROM users", [], (_, rows) => res.json(rows));
 });
 
-app.listen(PORT, () => console.log(`✅ Server running on port ${PORT}`));
+app.listen(PORT, () =>
+    console.log(`✅ Server running on port ${PORT}`)
+);
