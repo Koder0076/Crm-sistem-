@@ -1,89 +1,109 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const cors = require("cors");
-const path = require("path");
+const bodyParser = require("body-parser");
 const { Pool } = require("pg");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-const ADMIN_PASSWORD = "dandelion0514";
-
-// ✅ PostgreSQL (Render)
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
+const PORT = process.env.PORT || 10000;
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(express.static(__dirname));
 
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "index.html"));
+/* ===== POSTGRES ===== */
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
-// ===== INIT DB =====
+/* ===== INIT DB ===== */
 async function initDB() {
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            email TEXT UNIQUE,
-            username TEXT,
-            score INTEGER DEFAULT 0
-        )
-    `);
-    console.log("✅ DB ready");
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id SERIAL PRIMARY KEY,
+      email TEXT,
+      username TEXT
+    )
+  `);
+
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS scores (
+      user_id INTEGER UNIQUE,
+      score INTEGER DEFAULT 0
+    )
+  `);
+
+  console.log("✅ Database ready");
 }
-initDB();
 
-// ===== REGISTER =====
+initDB().catch(err => {
+  console.error("DB ERROR:", err);
+  process.exit(1);
+});
+
+/* ===== REGISTER ===== */
 app.post("/register", async (req, res) => {
-    const { email, user } = req.body;
-    try {
-        const result = await pool.query(
-            "INSERT INTO users (email, username) VALUES ($1, $2) RETURNING id",
-            [email, user]
-        );
-        res.json({ ok: true, id: result.rows[0].id });
-    } catch (err) {
-        console.error(err.message);
-        res.status(400).json({ error: "exists" });
+  const { email, user } = req.body;
+
+  try {
+    const exists = await pool.query(
+      "SELECT id FROM users WHERE email = $1",
+      [email]
+    );
+
+    if (exists.rows.length) {
+      return res.json({ ok: false, error: "exists" });
     }
+
+    const result = await pool.query(
+      "INSERT INTO users (email, username) VALUES ($1, $2) RETURNING id",
+      [email, user]
+    );
+
+    const uid = result.rows[0].id;
+
+    await pool.query(
+      "INSERT INTO scores (user_id, score) VALUES ($1, 0)",
+      [uid]
+    );
+
+    res.json({ ok: true, id: uid });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false });
+  }
 });
 
-// ===== GET SCORE BY ID =====
-app.get("/score/:id", async (req, res) => {
+/* ===== GET SCORE ===== */
+app.get("/score/:uid", async (req, res) => {
+  const { uid } = req.params;
+
+  try {
     const result = await pool.query(
-        "SELECT score FROM users WHERE id = $1",
-        [req.params.id]
+      "SELECT score FROM scores WHERE user_id = $1",
+      [uid]
     );
+
     res.json({ score: result.rows[0]?.score || 0 });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ score: 0 });
+  }
 });
 
-// ===== ADD SCORE =====
-app.post("/score", async (req, res) => {
-    const { id, score } = req.body;
+/* ===== ADMIN ===== */
+app.get("/admin/users", async (req, res) => {
+  const result = await pool.query(`
+    SELECT users.id, users.email, users.username, scores.score
+    FROM users
+    LEFT JOIN scores ON users.id = scores.user_id
+  `);
 
-    const result = await pool.query(
-        "UPDATE users SET score = score + $1 WHERE id = $2 RETURNING score",
-        [score, id]
-    );
-
-    if (result.rowCount === 0)
-        return res.status(404).json({ error: "user_not_found" });
-
-    res.json({ ok: true });
+  res.json(result.rows);
 });
 
-// ===== ADMIN =====
-app.post("/admin/users", async (req, res) => {
-    if (req.body.password !== ADMIN_PASSWORD)
-        return res.status(403).json({ error: "forbidden" });
-
-    const result = await pool.query("SELECT * FROM users ORDER BY id DESC");
-    res.json(result.rows);
+/* ===== START ===== */
+app.listen(PORT, () => {
+  console.log("🚀 Server running on", PORT);
 });
-
-app.listen(PORT, () =>
-    console.log(`🚀 Server running on ${PORT}`)
-);
