@@ -34,9 +34,8 @@ async function initDB() {
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS scores (
-      user_id INTEGER PRIMARY KEY,
-      score INTEGER DEFAULT 0,
-      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      score INTEGER DEFAULT 0
     )
   `);
 
@@ -51,20 +50,11 @@ initDB().catch(err => {
 /* ===== REGISTER ===== */
 app.post("/register", async (req, res) => {
   const { email, user } = req.body;
-
-  if (!email || !user) {
-    return res.status(400).json({ ok: false });
-  }
+  if (!email || !user) return res.status(400).json({ ok: false });
 
   try {
-    const exists = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [email]
-    );
-
-    if (exists.rows.length) {
-      return res.json({ ok: false, error: "exists" });
-    }
+    const exists = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+    if (exists.rows.length) return res.json({ ok: false, error: "exists" });
 
     const result = await pool.query(
       "INSERT INTO users (email, username) VALUES ($1, $2) RETURNING id",
@@ -72,11 +62,7 @@ app.post("/register", async (req, res) => {
     );
 
     const uid = result.rows[0].id;
-
-    await pool.query(
-      "INSERT INTO scores (user_id, score) VALUES ($1, 0)",
-      [uid]
-    );
+    await pool.query("INSERT INTO scores (user_id, score) VALUES ($1, 0)", [uid]);
 
     res.json({ ok: true, id: uid });
   } catch (e) {
@@ -88,13 +74,8 @@ app.post("/register", async (req, res) => {
 /* ===== GET SCORE ===== */
 app.get("/score/:uid", async (req, res) => {
   const uid = Number(req.params.uid);
-
   try {
-    const result = await pool.query(
-      "SELECT score FROM scores WHERE user_id = $1",
-      [uid]
-    );
-
+    const result = await pool.query("SELECT score FROM scores WHERE user_id = $1", [uid]);
     res.json({ score: result.rows[0]?.score || 0 });
   } catch (e) {
     console.error(e);
@@ -104,14 +85,14 @@ app.get("/score/:uid", async (req, res) => {
 
 /* ===== ADD SCORE ===== */
 app.post("/score", async (req, res) => {
-  const { uid, score } = req.body;
+  const { id, score } = req.body; // Важливо: frontend відправляє `id`
+  if (!id || !score) return res.status(400).json({ ok: false });
 
   try {
     await pool.query(
       "UPDATE scores SET score = score + $1 WHERE user_id = $2",
-      [score, uid]
+      [score, id]
     );
-
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
@@ -120,18 +101,25 @@ app.post("/score", async (req, res) => {
 });
 
 /* ===== ADMIN ===== */
-app.get("/admin/users", async (req, res) => {
-  const result = await pool.query(`
-    SELECT users.id, users.email, users.username, scores.score
-    FROM users
-    LEFT JOIN scores ON users.id = scores.user_id
-    ORDER BY users.id
-  `);
+const ADMIN_PASSWORD = "dandelion0514";
 
-  res.json(result.rows);
+app.post("/admin/users", async (req, res) => {
+  const { password } = req.body;
+  if (password !== ADMIN_PASSWORD) return res.status(403).json({ error: "forbidden" });
+
+  try {
+    const result = await pool.query(`
+      SELECT users.id, users.email, users.username, scores.score
+      FROM users
+      LEFT JOIN scores ON users.id = scores.user_id
+      ORDER BY users.id
+    `);
+    res.json(result.rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false });
+  }
 });
 
-/* ===== START ===== */
-app.listen(PORT, () => {
-  console.log("🚀 Server running on", PORT);
-});
+/* ===== START SERVER ===== */
+app.listen(PORT, () => console.log("🚀 Server running on", PORT));

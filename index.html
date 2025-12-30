@@ -1,241 +1,238 @@
+
 <!DOCTYPE html>
-<html lang="uk">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Main Page</title>
+<html lang="uk">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>Main Page</title>  
+<style>  
+* {  
+    margin: 0;  
+    padding: 0;  
+    box-sizing: border-box;  
+    font-family: Arial, sans-serif;  
+}  
+  
+body {  
+    background: #000;  
+    color: #fff;  
+    min-height: 100vh;  
+    padding-bottom: 70px;  
+}  
+  
+/* BLUR */  
+.blur {  
+    filter: blur(8px);  
+    pointer-events: none;  
+}  
+  
+/* USER ID */  
+.user-id {  
+    position: fixed;  
+    top: 6px;  
+    left: 8px;  
+    font-size: 11px;  
+    opacity: 0.6;  
+    z-index: 1001;  
+}  
+  
+/* ====== ТВОЯ СТОРІНКА ====== */  
+#app {  
+    min-height: 100vh;  
+    display: flex;  
+    flex-direction: column;  
+    align-items: center;  
+}  
+  
+/* SCORE TEXT */  
+.score-label {  
+    margin-top: 20px;  
+    font-size: 22px;  
+    font-weight: 600;  
+}  
+  
+/* MAIN CONTENT */  
+.main {  
+    flex: 1;  
+    display: flex;  
+    align-items: center;  
+    justify-content: center;  
+    gap: 16px;  
+    width: 100%;  
+}  
+  
+/* SIDE IMAGE */  
+.side-img {  
+    width: 72px;  
+    height: 120px;  
+    overflow: hidden;  
+    border-radius: 10px;  
+    opacity: 0.85;  
+}  
+  
+.side-img img {  
+    width: 100%;  
+    height: 100%;  
+    object-fit: cover;  
+}  
+  
+/* POINTS */  
+.points {  
+    font-size: 76px;  
+    font-weight: 900;  
+    padding: 16px 32px;  
+    border-radius: 16px;  
+    background: linear-gradient(145deg, #0a0a0a, #151515);  
+}  
+  
+/* BOTTOM NAV */  
+.bottom-nav {  
+    position: fixed;  
+    bottom: 0;  
+    left: 0;  
+    width: 100%;  
+    height: 60px;  
+    background: #000;  
+    display: flex;  
+    justify-content: space-around;  
+    align-items: center;  
+    border-top: 1px solid #222;  
+}  
+  
+.bottom-nav a {  
+    text-decoration: none;  
+    color: #fff;  
+    font-size: 15px;  
+}  
+  
+/* ====== MODAL ====== */  
+.modal {  
+    position: fixed;  
+    inset: 0;  
+    background: rgba(0,0,0,0.85);  
+    display: flex;  
+    align-items: center;  
+    justify-content: center;  
+    z-index: 1000;  
+}  
+  
+.form {  
+    background: #111;  
+    padding: 24px;  
+    border-radius: 12px;  
+    width: 280px;  
+}  
+  
+.form input {  
+    width: 100%;  
+    padding: 10px;  
+    margin-bottom: 12px;  
+    background: #000;  
+    border: 1px solid #333;  
+    color: #fff;  
+}  
+  
+.form button {  
+    width: 100%;  
+    padding: 10px;  
+    background: #00ff88;  
+    border: none;  
+    font-weight: bold;  
+}  
+</style>  
+</head>  
+<body>  
 
-<style>
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: Arial, sans-serif;
-}
+<div class="user-id" id="uid"></div>  
 
-body {
-    background: #000;
-    color: #fff;
-    min-height: 100vh;
-    padding-bottom: 70px;
-}
+<!-- ===== APP ===== -->  
+<div id="app">  
+    <div class="score-label">Score</div>  
 
-/* BLUR */
-.blur {
-    filter: blur(8px);
-    pointer-events: none;
-}
+    <div class="main">  
+        <div class="side-img"><img src="Yu.jpg"></div>  
+        <div class="points">0</div>  
+        <div class="side-img"><img src="Yu.jpg"></div>  
+    </div>  
 
-/* USER ID */
-.user-id {
-    position: fixed;
-    top: 6px;
-    left: 8px;
-    font-size: 11px;
-    opacity: 0.6;
-    z-index: 1001;
-}
-
-/* ====== ТВОЯ СТОРІНКА ====== */
-#app {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-
-/* SCORE TEXT */
-.score-label {
-    margin-top: 20px;
-    font-size: 22px;
-    font-weight: 600;
-}
-
-/* MAIN CONTENT */
-.main {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    width: 100%;
-}
-
-/* SIDE IMAGE */
-.side-img {
-    width: 72px;
-    height: 120px;
-    overflow: hidden;
-    border-radius: 10px;
-    opacity: 0.85;
-}
-
-.side-img img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* POINTS */
-.points {
-    font-size: 76px;
-    font-weight: 900;
-    padding: 16px 32px;
-    border-radius: 16px;
-    background: linear-gradient(145deg, #0a0a0a, #151515);
-}
-
-/* BOTTOM NAV */
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 60px;
-    background: #000;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    border-top: 1px solid #222;
-}
-
-.bottom-nav a {
-    text-decoration: none;
-    color: #fff;
-    font-size: 15px;
-}
-
-/* ====== MODAL ====== */
-.modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.form {
-    background: #111;
-    padding: 24px;
-    border-radius: 12px;
-    width: 280px;
-}
-
-.form input {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 12px;
-    background: #000;
-    border: 1px solid #333;
-    color: #fff;
-}
-
-.form button {
-    width: 100%;
-    padding: 10px;
-    background: #00ff88;
-    border: none;
-    font-weight: bold;
-}
-</style>
-</head>
-
-<body>
-
-<div class="user-id" id="uid"></div>
-
-<!-- ===== APP ===== -->
-<div id="app">
-
-    <div class="score-label">Score</div>
-
-    <div class="main">
-        <div class="side-img"><img src="Yu.jpg"></div>
-        <div class="points">0</div>
-        <div class="side-img"><img src="Yu.jpg"></div>
-    </div>
-
-    <nav class="bottom-nav">
-        <a href="index21.html">🎮 Game</a>
-        <a href="earn.html">💰 Earn</a>
-        <a href="listing.html">📋 Listing</a>
+    <nav class="bottom-nav">  
+        <a href="index21.html">🎮 Game</a>  
+        <a href="earn.html">💰 Earn</a>  
+        <a href="listing.html">📋 Listing</a>  
     </nav>
+</div>  
 
-</div>
+<!-- ===== MODAL ===== -->  
+<div class="modal" id="modal">  
+    <div class="form">  
+        <input id="email" placeholder="Email">  
+        <input id="user" placeholder="Username / Telegram">  
+        <button onclick="register()">Зареєструватися</button>  
+    </div>  
+</div>  
 
-<!-- ===== MODAL ===== -->
-<div class="modal" id="modal">
-    <div class="form">
-        <input id="email" placeholder="Email">
-        <input id="user" placeholder="Username / Telegram">
-        <button onclick="register()">Зареєструватися</button>
-    </div>
-</div>
+<script>  
+const modal = document.getElementById("modal");  
+const app = document.getElementById("app");  
+const uidElem = document.getElementById("uid");  
+const pointsElem = document.querySelector(".points");  
 
-<script>
-const modal = document.getElementById("modal");
-const app = document.getElementById("app");
-const uidElem = document.getElementById("uid");
-const pointsElem = document.querySelector(".points");
+const emailInput = document.getElementById("email");  
+const userInput = document.getElementById("user");  
 
-const emailInput = document.getElementById("email");
-const userInput = document.getElementById("user");
+// ✅ ПРАЦЮЄМО ПО ID  
+const uid = localStorage.getItem("uid");  
 
-// ✅ ПРАЦЮЄМО ПО ID
-const uid = localStorage.getItem("uid");
+if (!uid) {  
+    app.classList.add("blur");  
+} else {  
+    uidElem.textContent = "ID: " + uid;  
+    modal.style.display = "none";  
 
-if (!uid) {
-    app.classList.add("blur");
-} else {
-    uidElem.textContent = "ID: " + uid;
-    modal.style.display = "none";
+    // ✅ Отримуємо score по ID  
+    fetch(`/score/${uid}`)  
+        .then(res => res.json())  
+        .then(data => pointsElem.textContent = data.score)  
+        .catch(err => console.error(err));  
+}  
 
-    // ✅ Отримуємо score по ID
-    fetch(`/score/${uid}`)
-        .then(res => res.json())
-        .then(data => pointsElem.textContent = data.score)
-        .catch(err => console.error(err));
-}
+function register() {  
+    const e = emailInput.value.trim();  
+    const u = userInput.value.trim();  
 
-function register() {
-    const e = emailInput.value.trim();
-    const u = userInput.value.trim();
+    if (!e || !u) {  
+        alert("Заповни всі поля");  
+        return;  
+    }  
 
-    if (!e || !u) {
-        alert("Заповни всі поля");
-        return;
-    }
+    fetch("/register", {  
+        method: "POST",  
+        headers: { "Content-Type": "application/json" },  
+        body: JSON.stringify({ email: e, user: u })  
+    })  
+    .then(res => res.json())  
+    .then(data => {  
+        if (data.ok) {  
+            // ✅ ЗБЕРІГАЄМО ID  
+            localStorage.setItem("uid", data.id);  
+            localStorage.setItem("email", e); // лишається як інфо  
 
-    fetch("/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: e, user: u })
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.ok) {
-            // ✅ ЗБЕРІГАЄМО ID
-            localStorage.setItem("uid", data.id);
-            localStorage.setItem("email", e); // лишається як інфо
+            uidElem.textContent = "ID: " + data.id;  
+            modal.style.display = "none";  
+            app.classList.remove("blur");  
 
-            uidElem.textContent = "ID: " + data.id;
-            modal.style.display = "none";
-            app.classList.remove("blur");
+            // ✅ ОТРИМУЄМО SCORE ПО ID  
+            fetch(`/score/${data.id}`)  
+                .then(res => res.json())  
+                .then(d => pointsElem.textContent = d.score)  
+                .catch(err => console.error(err));  
+        } else if (data.error === "exists") {  
+            alert("Користувач вже існує");  
+        }  
+    })  
+    .catch(err => console.error(err));  
+}  
+</script>  
 
-            // ✅ ОТРИМУЄМО SCORE ПО ID
-            fetch(`/score/${data.id}`)
-                .then(res => res.json())
-                .then(d => pointsElem.textContent = d.score)
-                .catch(err => console.error(err));
-        } else if (data.error === "exists") {
-            alert("Користувач вже існує");
-        }
-    })
-    .catch(err => console.error(err));
-}
-</script>
-
-</body>
+</body>  
 </html>

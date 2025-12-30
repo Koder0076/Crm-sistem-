@@ -1,20 +1,26 @@
-
 <!DOCTYPE html>
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ADMIN</title>
 <style>
 body {
     background:#000;
     color:#0f0;
-    font-family:monospace;
+    font-family: monospace;
     padding:20px;
 }
 input, button {
     padding:10px;
     margin:5px 0;
     width:100%;
+    background: #111;
+    border: 1px solid #0f0;
+    color: #0f0;
+}
+button {
+    cursor: pointer;
 }
 table {
     width:100%;
@@ -24,6 +30,7 @@ table {
 td, th {
     border:1px solid #0f0;
     padding:6px;
+    text-align: left;
 }
 </style>
 </head>
@@ -40,7 +47,7 @@ td, th {
             <tr>
                 <th>ID</th>
                 <th>Email</th>
-                <th>User</th>
+                <th>Username</th>
                 <th>Score</th>
             </tr>
         </thead>
@@ -49,41 +56,36 @@ td, th {
 </div>
 
 <script>
-function login() {
-    const password = pass.value;
+const ADMIN_PASSWORD = "dandelion0514."; // встановлюємо пароль
 
-    fetch("/admin/login", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ password })
-    })
-    .then(r => {
-        if (!r.ok) throw 0;
-        document.getElementById("panel").style.display = "block";
-        loadUsers(password);
-    })
-    .catch(() => alert("WRONG PASSWORD"));
+function login() {
+    const password = document.getElementById("pass").value;
+    if(password !== ADMIN_PASSWORD) {
+        alert("WRONG PASSWORD");
+        return;
+    }
+    document.getElementById("panel").style.display = "block";
+    loadUsers();
 }
 
-function loadUsers(password) {
-    fetch("/admin/users", {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ password })
-    })
-    .then(r => r.json())
+function loadUsers() {
+    fetch("/admin/users")
+    .then(res => res.json())
     .then(data => {
-        users.innerHTML = "";
+        const tbody = document.getElementById("users");
+        tbody.innerHTML = "";
         data.forEach(u => {
-            users.innerHTML += `
-            <tr>
-                <td>${u.id}</td>
-                <td>${u.email}</td>
-                <td>${u.user}</td>
-                <td>${u.score}</td>
-            </tr>`;
+            tbody.innerHTML += `
+                <tr>
+                    <td>${u.id}</td>
+                    <td>${u.email}</td>
+                    <td>${u.username}</td>
+                    <td>${u.score || 0}</td>
+                </tr>
+            `;
         });
-    });
+    })
+    .catch(err => console.error(err));
 }
 </script>
 
