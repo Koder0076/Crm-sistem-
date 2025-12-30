@@ -39,6 +39,13 @@ async function initDB() {
     )
   `);
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS earn_blocks (
+      id SERIAL PRIMARY KEY,
+      data JSONB
+    )
+  `);
+
   console.log("✅ Database ready");
 }
 
@@ -115,6 +122,37 @@ app.post("/admin/users", async (req, res) => {
       ORDER BY users.id
     `);
     res.json(result.rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false });
+  }
+});
+
+/* ===== EARN BLOCKS ===== */
+
+// GET: повертає блоки
+app.get("/earn-blocks", async (req, res) => {
+  try {
+    const result = await pool.query("SELECT data FROM earn_blocks ORDER BY id ASC");
+    const blocks = result.rows.map(r => r.data);
+    res.json(blocks);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json([]);
+  }
+});
+
+// POST: зберігає блоки з адмінки
+app.post("/admin/earn-blocks", async (req, res) => {
+  const { password, blocks } = req.body;
+  if (password !== ADMIN_PASSWORD) return res.status(403).json({ error: "forbidden" });
+
+  try {
+    await pool.query("DELETE FROM earn_blocks");
+    for (const block of blocks) {
+      await pool.query("INSERT INTO earn_blocks (data) VALUES ($1)", [block]);
+    }
+    res.json({ ok: true });
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false });
