@@ -1,66 +1,148 @@
+
 <!DOCTYPE html>
 <html lang="uk">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notcoin Tasks UI</title>
-    <link rel="stylesheet" href="style2.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notcoin Tasks UI</title>
+<link rel="stylesheet" href="style2.css">
+<style>
+/* Додаткові стилі для гортання Earn/Web3 */
+.scroll-container {
+    display: flex;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding-bottom: 10px;
+}
+.scroll-container::-webkit-scrollbar {
+    display: none;
+}
+.scroll-btn {
+    background: #0f0;
+    color: #000;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    margin: 5px;
+    border-radius: 5px;
+}
+</style>
 </head>
 <body>
-    <div class="app-container">
-        <header class="header">
-    <a href="index.html" class="back-btn">‹ Back</a>
-</header>
+<div class="app-container">
+    <header class="header">
+        <a href="index.html" class="back-btn">‹ Back</a>
+    </header>
 
-        <section class="task-section">
-            <h2 class="section-title">Specials <span class="count">1/2</span></h2>
-            
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon rocket">🚀</div>
-                    <div class="task-text">
-                        <h3>Subscription channel</h3>
-                        <p class="reward">+300,000 <span class="coin">●</span></p>
-                    </div>
+    <!-- Specials (статичний блок) -->
+    <section class="task-section">
+        <h2 class="section-title">Specials <span class="count">1/2</span></h2>
+        <div class="task-card">
+            <div class="task-info">
+                <div class="task-icon rocket">🚀</div>
+                <div class="task-text">
+                    <h3>Subscription channel</h3>
+                    <p class="reward">+300,000 <span class="coin">●</span></p>
                 </div>
-                <div class="arrow">›</div>
             </div>
+            <div class="arrow">›</div>
+        </div>
 
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon star">★</div>
-                    <div class="task-text">
-                        <h3>Telegram Premium</h3>
-                        <p class="reward">+3,000,000 <span class="coin">●</span></p>
-                    </div>
+        <div class="task-card">
+            <div class="task-info">
+                <div class="task-icon star">★</div>
+                <div class="task-text">
+                    <h3>Telegram Premium</h3>
+                    <p class="reward">+3,000,000 <span class="coin">●</span></p>
                 </div>
-                <div class="arrow">›</div>
             </div>
+            <div class="arrow">›</div>
+        </div>
 
-            <div class="task-card completed">
-                <div class="task-info">
-                    <div class="task-icon circle">○</div>
-                    <div class="task-text">
-                        <h3>Follow Community</h3>
-                        <p class="status">Completed</p>
-                    </div>
+        <div class="task-card completed">
+            <div class="task-info">
+                <div class="task-icon circle">○</div>
+                <div class="task-text">
+                    <h3>Follow Community</h3>
+                    <p class="status">Completed</p>
                 </div>
-                <div class="check">✓</div>
             </div>
-        </section>
+            <div class="check">✓</div>
+        </div>
+    </section>
 
-        <section class="task-section">
-            <h2 class="section-title">Web3 world <span class="count">1/3</span></h2>
-            <div class="task-card">
-                <div class="task-info">
-                    <div class="task-icon folder">📂</div>
-                    <div class="task-text">
-                        <h3>TON каналы</h3>
-                    </div>
+    <!-- Earn (динамічний блок) -->
+    <section class="task-section">
+        <h2 class="section-title">Earn</h2>
+        <div class="controls">
+            <button class="scroll-btn" onclick="scrollEarn(-1)">←</button>
+            <button class="scroll-btn" onclick="scrollEarn(1)">→</button>
+        </div>
+        <div class="scroll-container" id="earn-container">
+            <!-- Тут будуть блоки з адмінки -->
+        </div>
+    </section>
+
+    <!-- Web3 world (динамічний блок) -->
+    <section class="task-section">
+        <h2 class="section-title">Web3 world</h2>
+        <div class="controls">
+            <button class="scroll-btn" onclick="scrollWeb3(-1)">←</button>
+            <button class="scroll-btn" onclick="scrollWeb3(1)">→</button>
+        </div>
+        <div class="scroll-container" id="web3-container">
+            <!-- Тут будуть блоки Web3 з адмінки -->
+        </div>
+    </section>
+</div>
+
+<script>
+let earnBlocks = [];
+let web3Blocks = [];
+
+const earnContainer = document.getElementById("earn-container");
+const web3Container = document.getElementById("web3-container");
+
+// Підвантажуємо блоки з сервера
+fetch("/earn-blocks")
+.then(res => res.json())
+.then(data => {
+    // Припустимо, перші 35 блоків — Earn, наступні — Web3
+    earnBlocks = data.slice(0, 35);
+    web3Blocks = data.slice(35);
+    renderBlocks(earnBlocks, earnContainer);
+    renderBlocks(web3Blocks, web3Container);
+})
+.catch(err => console.error(err));
+
+function renderBlocks(blocks, container) {
+    container.innerHTML = "";
+    blocks.forEach(block => {
+        if (!block || (!block.title && !block.text && !block.icon && !block.link)) return;
+        const el = document.createElement("div");
+        el.className = "task-card";
+        el.innerHTML = `
+            <div class="task-info">
+                <div class="task-icon">${block.icon || '★'}</div>
+                <div class="task-text">
+                    <h3>${block.title || ''}</h3>
+                    <p>${block.text || ''}</p>
+                    ${block.link ? `<a href="${block.link}" target="_blank">Go</a>` : ''}
                 </div>
-                <div class="arrow">›</div>
             </div>
-        </section>
-    </div>
+            <div class="arrow">›</div>
+        `;
+        container.appendChild(el);
+    });
+}
+
+// Функції гортання
+function scrollEarn(dir) {
+    earnContainer.scrollBy({ left: dir * 260, behavior: 'smooth' });
+}
+function scrollWeb3(dir) {
+    web3Container.scrollBy({ left: dir * 260, behavior: 'smooth' });
+}
+</script>
 </body>
 </html>
