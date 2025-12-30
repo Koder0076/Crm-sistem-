@@ -85,8 +85,8 @@ app.get("/score/:uid", async (req, res) => {
 
 /* ===== ADD SCORE ===== */
 app.post("/score", async (req, res) => {
-  const { id, score } = req.body; // Важливо: frontend відправляє `id`
-  if (!id || !score) return res.status(400).json({ ok: false });
+  const { id, score } = req.body;
+  if (!id || score === undefined || score === null) return res.status(400).json({ ok: false });
 
   try {
     await pool.query(

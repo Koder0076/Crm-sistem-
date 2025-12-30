@@ -5,33 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ADMIN</title>
 <style>
-body {
-    background:#000;
-    color:#0f0;
-    font-family: monospace;
-    padding:20px;
-}
-input, button {
-    padding:10px;
-    margin:5px 0;
-    width:100%;
-    background: #111;
-    border: 1px solid #0f0;
-    color: #0f0;
-}
-button {
-    cursor: pointer;
-}
-table {
-    width:100%;
-    border-collapse:collapse;
-    margin-top:20px;
-}
-td, th {
-    border:1px solid #0f0;
-    padding:6px;
-    text-align: left;
-}
+body { background:#000; color:#0f0; font-family: monospace; padding:20px; }
+input, button { padding:10px; margin:5px 0; width:100%; background: #111; border: 1px solid #0f0; color: #0f0; }
+button { cursor: pointer; }
+table { width:100%; border-collapse:collapse; margin-top:20px; }
+td, th { border:1px solid #0f0; padding:6px; text-align: left; }
 </style>
 </head>
 <body>
@@ -56,7 +34,7 @@ td, th {
 </div>
 
 <script>
-const ADMIN_PASSWORD = "dandelion0514."; // встановлюємо пароль
+const ADMIN_PASSWORD = "dandelion0514";
 
 function login() {
     const password = document.getElementById("pass").value;
@@ -69,7 +47,11 @@ function login() {
 }
 
 function loadUsers() {
-    fetch("/admin/users")
+    fetch("/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: ADMIN_PASSWORD })
+    })
     .then(res => res.json())
     .then(data => {
         const tbody = document.getElementById("users");

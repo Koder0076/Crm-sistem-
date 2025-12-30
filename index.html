@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="uk">  
 <head>  
@@ -6,139 +5,22 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">  
 <title>Main Page</title>  
 <style>  
-* {  
-    margin: 0;  
-    padding: 0;  
-    box-sizing: border-box;  
-    font-family: Arial, sans-serif;  
-}  
-  
-body {  
-    background: #000;  
-    color: #fff;  
-    min-height: 100vh;  
-    padding-bottom: 70px;  
-}  
-  
-/* BLUR */  
-.blur {  
-    filter: blur(8px);  
-    pointer-events: none;  
-}  
-  
-/* USER ID */  
-.user-id {  
-    position: fixed;  
-    top: 6px;  
-    left: 8px;  
-    font-size: 11px;  
-    opacity: 0.6;  
-    z-index: 1001;  
-}  
-  
-/* ====== ТВОЯ СТОРІНКА ====== */  
-#app {  
-    min-height: 100vh;  
-    display: flex;  
-    flex-direction: column;  
-    align-items: center;  
-}  
-  
-/* SCORE TEXT */  
-.score-label {  
-    margin-top: 20px;  
-    font-size: 22px;  
-    font-weight: 600;  
-}  
-  
-/* MAIN CONTENT */  
-.main {  
-    flex: 1;  
-    display: flex;  
-    align-items: center;  
-    justify-content: center;  
-    gap: 16px;  
-    width: 100%;  
-}  
-  
-/* SIDE IMAGE */  
-.side-img {  
-    width: 72px;  
-    height: 120px;  
-    overflow: hidden;  
-    border-radius: 10px;  
-    opacity: 0.85;  
-}  
-  
-.side-img img {  
-    width: 100%;  
-    height: 100%;  
-    object-fit: cover;  
-}  
-  
-/* POINTS */  
-.points {  
-    font-size: 76px;  
-    font-weight: 900;  
-    padding: 16px 32px;  
-    border-radius: 16px;  
-    background: linear-gradient(145deg, #0a0a0a, #151515);  
-}  
-  
-/* BOTTOM NAV */  
-.bottom-nav {  
-    position: fixed;  
-    bottom: 0;  
-    left: 0;  
-    width: 100%;  
-    height: 60px;  
-    background: #000;  
-    display: flex;  
-    justify-content: space-around;  
-    align-items: center;  
-    border-top: 1px solid #222;  
-}  
-  
-.bottom-nav a {  
-    text-decoration: none;  
-    color: #fff;  
-    font-size: 15px;  
-}  
-  
-/* ====== MODAL ====== */  
-.modal {  
-    position: fixed;  
-    inset: 0;  
-    background: rgba(0,0,0,0.85);  
-    display: flex;  
-    align-items: center;  
-    justify-content: center;  
-    z-index: 1000;  
-}  
-  
-.form {  
-    background: #111;  
-    padding: 24px;  
-    border-radius: 12px;  
-    width: 280px;  
-}  
-  
-.form input {  
-    width: 100%;  
-    padding: 10px;  
-    margin-bottom: 12px;  
-    background: #000;  
-    border: 1px solid #333;  
-    color: #fff;  
-}  
-  
-.form button {  
-    width: 100%;  
-    padding: 10px;  
-    background: #00ff88;  
-    border: none;  
-    font-weight: bold;  
-}  
+* { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }  
+body { background: #000; color: #fff; min-height: 100vh; padding-bottom: 70px; }  
+.blur { filter: blur(8px); pointer-events: none; }  
+.user-id { position: fixed; top: 6px; left: 8px; font-size: 11px; opacity: 0.6; z-index: 1001; }  
+#app { min-height: 100vh; display: flex; flex-direction: column; align-items: center; }  
+.score-label { margin-top: 20px; font-size: 22px; font-weight: 600; }  
+.main { flex: 1; display: flex; align-items: center; justify-content: center; gap: 16px; width: 100%; }  
+.side-img { width: 72px; height: 120px; overflow: hidden; border-radius: 10px; opacity: 0.85; }  
+.side-img img { width: 100%; height: 100%; object-fit: cover; }  
+.points { font-size: 76px; font-weight: 900; padding: 16px 32px; border-radius: 16px; background: linear-gradient(145deg, #0a0a0a, #151515); }  
+.bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; background: #000; display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #222; }  
+.bottom-nav a { text-decoration: none; color: #fff; font-size: 15px; }  
+.modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; }  
+.form { background: #111; padding: 24px; border-radius: 12px; width: 280px; }  
+.form input { width: 100%; padding: 10px; margin-bottom: 12px; background: #000; border: 1px solid #333; color: #fff; }  
+.form button { width: 100%; padding: 10px; background: #00ff88; border: none; font-weight: bold; }  
 </style>  
 </head>  
 <body>  
@@ -148,13 +30,11 @@ body {
 <!-- ===== APP ===== -->  
 <div id="app">  
     <div class="score-label">Score</div>  
-
     <div class="main">  
         <div class="side-img"><img src="Yu.jpg"></div>  
-        <div class="points">0</div>  
+        <div class="points" id="points">0</div>  
         <div class="side-img"><img src="Yu.jpg"></div>  
     </div>  
-
     <nav class="bottom-nav">  
         <a href="index21.html">🎮 Game</a>  
         <a href="earn.html">💰 Earn</a>  
@@ -175,63 +55,71 @@ body {
 const modal = document.getElementById("modal");  
 const app = document.getElementById("app");  
 const uidElem = document.getElementById("uid");  
-const pointsElem = document.querySelector(".points");  
+const pointsElem = document.getElementById("points");  
 
 const emailInput = document.getElementById("email");  
 const userInput = document.getElementById("user");  
 
-// ✅ ПРАЦЮЄМО ПО ID  
-const uid = localStorage.getItem("uid");  
+let uid = localStorage.getItem("uid");  
+
+function loadScore(userId) {
+    fetch(`/score/${userId}`)
+        .then(res => res.json())
+        .then(data => { pointsElem.textContent = data.score || 0; })
+        .catch(err => console.error(err));
+}
 
 if (!uid) {  
     app.classList.add("blur");  
+    modal.style.display = "flex";
 } else {  
     uidElem.textContent = "ID: " + uid;  
     modal.style.display = "none";  
-
-    // ✅ Отримуємо score по ID  
-    fetch(`/score/${uid}`)  
-        .then(res => res.json())  
-        .then(data => pointsElem.textContent = data.score)  
-        .catch(err => console.error(err));  
+    app.classList.remove("blur");
+    loadScore(uid);
 }  
 
 function register() {  
-    const e = emailInput.value.trim();  
-    const u = userInput.value.trim();  
+    const email = emailInput.value.trim();  
+    const user = userInput.value.trim();  
 
-    if (!e || !u) {  
-        alert("Заповни всі поля");  
-        return;  
-    }  
+    if (!email || !user) { alert("Заповни всі поля"); return; }  
 
     fetch("/register", {  
         method: "POST",  
         headers: { "Content-Type": "application/json" },  
-        body: JSON.stringify({ email: e, user: u })  
+        body: JSON.stringify({ email, user })  
     })  
     .then(res => res.json())  
     .then(data => {  
         if (data.ok) {  
-            // ✅ ЗБЕРІГАЄМО ID  
-            localStorage.setItem("uid", data.id);  
-            localStorage.setItem("email", e); // лишається як інфо  
+            uid = data.id;
+            localStorage.setItem("uid", uid);  
+            localStorage.setItem("email", email);  
 
-            uidElem.textContent = "ID: " + data.id;  
+            uidElem.textContent = "ID: " + uid;  
             modal.style.display = "none";  
             app.classList.remove("blur");  
 
-            // ✅ ОТРИМУЄМО SCORE ПО ID  
-            fetch(`/score/${data.id}`)  
-                .then(res => res.json())  
-                .then(d => pointsElem.textContent = d.score)  
-                .catch(err => console.error(err));  
+            loadScore(uid);
         } else if (data.error === "exists") {  
             alert("Користувач вже існує");  
         }  
     })  
     .catch(err => console.error(err));  
 }  
+
+// Функція для додавання очок із гри
+function addScore(value) {
+    if (!uid) return;
+    fetch("/score", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: uid, score: value })
+    })
+    .then(() => loadScore(uid))
+    .catch(err => console.error(err));
+}
 </script>  
 
 </body>  
