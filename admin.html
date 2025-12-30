@@ -13,6 +13,7 @@ td, th { border:1px solid #0f0; padding:6px; text-align: left; }
 .earn-block { border:1px solid #0f0; margin:10px 0; padding:10px; }
 .earn-block input { width: 90%; margin-bottom: 5px; }
 .earn-controls { display:flex; gap:5px; margin-top:5px; }
+.save-btn { background: #0f0; color: #000; border: none; padding: 10px; cursor: pointer; margin-top: 10px; width:100%; }
 </style>
 </head>
 <body>
@@ -41,13 +42,14 @@ td, th { border:1px solid #0f0; padding:6px; text-align: left; }
     <div id="earn-editor" style="display:none; margin-top:20px;">
         <h2>🎯 Earn Blocks</h2>
         <div id="earn-blocks-container"></div>
+        <button class="save-btn" onclick="saveEarnBlocks()">💾 Save All Changes</button>
     </div>
 </div>
 
 <script>
 const ADMIN_PASSWORD = "dandelion0514";
 const MAX_BLOCKS = 35;
-let earnBlocks = Array(MAX_BLOCKS).fill(null); // масив для блоків
+let earnBlocks = Array(MAX_BLOCKS).fill(null);
 
 function login() {
     const password = document.getElementById("pass").value;
@@ -118,30 +120,34 @@ function renderEarnBlocks() {
 function updateBlock(index, key, value) {
     if (!earnBlocks[index]) earnBlocks[index] = {};
     earnBlocks[index][key] = value;
-    saveEarnBlocks();
 }
 
+// Гортання блоків
 function moveBlockLeft(index) {
     if (index === 0) return;
     [earnBlocks[index-1], earnBlocks[index]] = [earnBlocks[index], earnBlocks[index-1]];
     renderEarnBlocks();
-    saveEarnBlocks();
 }
 
 function moveBlockRight(index) {
     if (index === MAX_BLOCKS-1) return;
     [earnBlocks[index+1], earnBlocks[index]] = [earnBlocks[index], earnBlocks[index+1]];
     renderEarnBlocks();
-    saveEarnBlocks();
 }
 
-// Збереження на сервер
+// ==================== Збереження ====================
+
 function saveEarnBlocks() {
     fetch("/admin/earn-blocks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password: ADMIN_PASSWORD, blocks: earnBlocks })
-    }).catch(err => console.error(err));
+    })
+    .then(res => {
+        if(res.ok) alert("✅ Blocks saved successfully!");
+        else alert("❌ Error saving blocks");
+    })
+    .catch(err => console.error(err));
 }
 
 // Завантаження блоків з сервера
@@ -150,6 +156,7 @@ function loadEarnBlocks() {
     .then(res => res.json())
     .then(data => {
         earnBlocks = data || Array(MAX_BLOCKS).fill(null);
+        renderEarnBlocks();
     })
     .catch(err => console.error(err));
 }
