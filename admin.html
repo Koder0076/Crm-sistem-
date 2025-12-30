@@ -98,15 +98,16 @@ function renderEarnBlocks() {
     container.innerHTML = "";
 
     earnBlocks.forEach((block, index) => {
+        if(!block) block = {};
         const blockEl = document.createElement("div");
         blockEl.className = "earn-block";
 
         blockEl.innerHTML = `
             <h3>Block ${index+1}</h3>
-            <label>Title: <input type="text" value="${block?.title || ''}" onchange="updateBlock(${index}, 'title', this.value)"></label><br>
-            <label>Text: <input type="text" value="${block?.text || ''}" onchange="updateBlock(${index}, 'text', this.value)"></label><br>
-            <label>Icon/Emoji: <input type="text" value="${block?.icon || ''}" onchange="updateBlock(${index}, 'icon', this.value)"></label><br>
-            <label>Link: <input type="text" value="${block?.link || ''}" onchange="updateBlock(${index}, 'link', this.value)"></label><br>
+            <label>Title: <input type="text" value="${block.title || ''}" onchange="updateBlock(${index}, 'title', this.value)"></label><br>
+            <label>Text: <input type="text" value="${block.text || ''}" onchange="updateBlock(${index}, 'text', this.value)"></label><br>
+            <label>Icon/Emoji: <input type="text" value="${block.icon || ''}" onchange="updateBlock(${index}, 'icon', this.value)"></label><br>
+            <label>Link: <input type="text" value="${block.link || ''}" onchange="updateBlock(${index}, 'link', this.value)"></label><br>
             <div class="earn-controls">
                 <button onclick="moveBlockLeft(${index})">← Left</button>
                 <button onclick="moveBlockRight(${index})">Right →</button>
@@ -155,7 +156,12 @@ function loadEarnBlocks() {
     fetch("/earn-blocks")
     .then(res => res.json())
     .then(data => {
-        earnBlocks = data || Array(MAX_BLOCKS).fill(null);
+        earnBlocks = Array(MAX_BLOCKS).fill(null); // завжди 35 елементів
+        if(Array.isArray(data)){
+            for(let i=0;i<data.length;i++){
+                earnBlocks[i] = data[i] || {};
+            }
+        }
         renderEarnBlocks();
     })
     .catch(err => console.error(err));
