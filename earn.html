@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -7,24 +6,45 @@
 <title>Notcoin Tasks UI</title>
 <link rel="stylesheet" href="style2.css">
 <style>
-/* Додаткові стилі для гортання Earn/Web3 */
-.scroll-container {
+/* Динамічні блоки мають точно такий же стиль, як Specials */
+.task-section {
+    margin-bottom: 30px;
+}
+.task-card {
     display: flex;
-    overflow-x: auto;
-    scroll-behavior: smooth;
-    padding-bottom: 10px;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    margin: 10px 0;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.scroll-container::-webkit-scrollbar {
-    display: none;
+.task-card.completed .task-text p {
+    color: gray;
 }
-.scroll-btn {
-    background: #0f0;
-    color: #000;
-    border: none;
-    padding: 10px 15px;
-    cursor: pointer;
-    margin: 5px;
-    border-radius: 5px;
+.task-info {
+    display: flex;
+    align-items: center;
+}
+.task-icon {
+    font-size: 30px;
+    margin-right: 10px;
+    width: 40px;
+    text-align: center;
+}
+.task-text h3 {
+    margin: 0;
+    font-size: 16px;
+}
+.task-text p {
+    margin: 2px 0 0 0;
+    font-size: 14px;
+}
+.arrow, .check {
+    font-size: 20px;
+    margin-left: 10px;
 }
 </style>
 </head>
@@ -71,29 +91,18 @@
         </div>
     </section>
 
-    <!-- Earn (динамічний блок) -->
+    <!-- Earn (динамічні блоки один під одним) -->
     <section class="task-section">
         <h2 class="section-title">Earn</h2>
-        <div class="controls">
-            <button class="scroll-btn" onclick="scrollEarn(-1)">←</button>
-            <button class="scroll-btn" onclick="scrollEarn(1)">→</button>
-        </div>
-        <div class="scroll-container" id="earn-container">
-            <!-- Тут будуть блоки з адмінки -->
-        </div>
+        <div id="earn-container"></div>
     </section>
 
-    <!-- Web3 world (динамічний блок) -->
+    <!-- Web3 world (динамічні блоки один під одним) -->
     <section class="task-section">
         <h2 class="section-title">Web3 world</h2>
-        <div class="controls">
-            <button class="scroll-btn" onclick="scrollWeb3(-1)">←</button>
-            <button class="scroll-btn" onclick="scrollWeb3(1)">→</button>
-        </div>
-        <div class="scroll-container" id="web3-container">
-            <!-- Тут будуть блоки Web3 з адмінки -->
-        </div>
+        <div id="web3-container"></div>
     </section>
+
 </div>
 
 <script>
@@ -107,18 +116,20 @@ const web3Container = document.getElementById("web3-container");
 fetch("/earn-blocks")
 .then(res => res.json())
 .then(data => {
-    // Припустимо, перші 35 блоків — Earn, наступні — Web3
-    earnBlocks = data.slice(0, 35);
+    // перші 35 блоків — Earn, решта — Web3
+    earnBlocks = data.slice(0,35);
     web3Blocks = data.slice(35);
     renderBlocks(earnBlocks, earnContainer);
     renderBlocks(web3Blocks, web3Container);
 })
 .catch(err => console.error(err));
 
+// Функція рендеру блоків
 function renderBlocks(blocks, container) {
     container.innerHTML = "";
     blocks.forEach(block => {
-        if (!block || (!block.title && !block.text && !block.icon && !block.link)) return;
+        if(!block || (!block.title && !block.text && !block.icon && !block.link)) return;
+
         const el = document.createElement("div");
         el.className = "task-card";
         el.innerHTML = `
@@ -130,18 +141,10 @@ function renderBlocks(blocks, container) {
                     ${block.link ? `<a href="${block.link}" target="_blank">Go</a>` : ''}
                 </div>
             </div>
-            <div class="arrow">›</div>
+            ${block.completed ? '<div class="check">✓</div>' : '<div class="arrow">›</div>'}
         `;
         container.appendChild(el);
     });
-}
-
-// Функції гортання
-function scrollEarn(dir) {
-    earnContainer.scrollBy({ left: dir * 260, behavior: 'smooth' });
-}
-function scrollWeb3(dir) {
-    web3Container.scrollBy({ left: dir * 260, behavior: 'smooth' });
 }
 </script>
 </body>
