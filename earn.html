@@ -6,21 +6,11 @@
 <title>Notcoin Tasks UI</title>
 <link rel="stylesheet" href="style2.css">
 <style>
-/* Динамічні блоки мають точно такий же стиль, як Specials */
+/* Стиль блоків як Specials */
 .task-section {
     margin-bottom: 30px;
 }
-.task-card {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    padding: 10px;
-    margin: 10px 0;
-    background: #fff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
+
 .task-card.completed .task-text p {
     color: gray;
 }
@@ -97,47 +87,37 @@
         <div id="earn-container"></div>
     </section>
 
-    <!-- Web3 world (динамічні блоки один під одним) -->
-    <section class="task-section">
-        <h2 class="section-title">Web3 world</h2>
-        <div id="web3-container"></div>
-    </section>
 
 </div>
 
 <script>
 let earnBlocks = [];
-let web3Blocks = [];
 
 const earnContainer = document.getElementById("earn-container");
-const web3Container = document.getElementById("web3-container");
 
-// Підвантажуємо блоки з сервера
+// Завантажуємо блоки з сервера
 fetch("/earn-blocks")
 .then(res => res.json())
 .then(data => {
     // перші 35 блоків — Earn, решта — Web3
     earnBlocks = data.slice(0,35);
-    web3Blocks = data.slice(35);
     renderBlocks(earnBlocks, earnContainer);
-    renderBlocks(web3Blocks, web3Container);
 })
 .catch(err => console.error(err));
 
-// Функція рендеру блоків
 function renderBlocks(blocks, container) {
     container.innerHTML = "";
     blocks.forEach(block => {
         if(!block || (!block.title && !block.text && !block.icon && !block.link)) return;
 
         const el = document.createElement("div");
-        el.className = "task-card";
+        el.className = "task-card" + (block.completed ? " completed" : "");
         el.innerHTML = `
             <div class="task-info">
                 <div class="task-icon">${block.icon || '★'}</div>
                 <div class="task-text">
                     <h3>${block.title || ''}</h3>
-                    <p>${block.text || ''}</p>
+                    <p>${block.text || ''}${block.reward ? ' ' + block.reward + ' <span class="coin">●</span>' : ''}${block.completed ? ' Completed' : ''}</p>
                     ${block.link ? `<a href="${block.link}" target="_blank">Go</a>` : ''}
                 </div>
             </div>
