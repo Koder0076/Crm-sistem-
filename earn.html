@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -39,14 +40,16 @@
 </style>
 </head>
 <body>
+
 <div class="app-container">
     <header class="header">
         <a href="index.html" class="back-btn">‹ Back</a>
     </header>
 
-    <!-- Specials (статичний блок) -->
+    <!-- Specials -->
     <section class="task-section">
         <h2 class="section-title">Specials <span class="count">1/2</span></h2>
+
         <div class="task-card">
             <div class="task-info">
                 <div class="task-icon rocket">🚀</div>
@@ -81,51 +84,62 @@
         </div>
     </section>
 
-    <!-- Earn (динамічні блоки один під одним) -->
+    <!-- Earn -->
     <section class="task-section">
         <h2 class="section-title">Earn</h2>
         <div id="earn-container"></div>
     </section>
-
-
 </div>
 
 <script>
 let earnBlocks = [];
-
 const earnContainer = document.getElementById("earn-container");
 
-// Завантажуємо блоки з сервера
+// Завантаження з сервера
 fetch("/earn-blocks")
 .then(res => res.json())
 .then(data => {
-    // перші 35 блоків — Earn, решта — Web3
-    earnBlocks = data.slice(0,35);
+    earnBlocks = data.slice(0, 35);
     renderBlocks(earnBlocks, earnContainer);
 })
 .catch(err => console.error(err));
 
 function renderBlocks(blocks, container) {
     container.innerHTML = "";
+
     blocks.forEach(block => {
-        if(!block || (!block.title && !block.text && !block.icon && !block.link)) return;
+        if (!block || (!block.title && !block.text && !block.icon && !block.link)) return;
 
         const el = document.createElement("div");
         el.className = "task-card" + (block.completed ? " completed" : "");
+
+        // ✅ КЛІК ПО ВСЬОМУ БЛОКУ
+        if (block.link) {
+            el.style.cursor = "pointer";
+            el.addEventListener("click", () => {
+                window.open(block.link, "_blank");
+            });
+        }
+
         el.innerHTML = `
             <div class="task-info">
                 <div class="task-icon">${block.icon || '★'}</div>
                 <div class="task-text">
                     <h3>${block.title || ''}</h3>
-                    <p>${block.text || ''}${block.reward ? ' ' + block.reward + ' <span class="coin">●</span>' : ''}${block.completed ? ' Completed' : ''}</p>
-                    ${block.link ? `<a href="${block.link}" target="_blank">Go</a>` : ''}
+                    <p>
+                        ${block.text || ''}
+                        ${block.reward ? ' ' + block.reward + ' <span class="coin">●</span>' : ''}
+                        ${block.completed ? ' Completed' : ''}
+                    </p>
                 </div>
             </div>
             ${block.completed ? '<div class="check">✓</div>' : '<div class="arrow">›</div>'}
         `;
+
         container.appendChild(el);
     });
 }
 </script>
+
 </body>
 </html>
