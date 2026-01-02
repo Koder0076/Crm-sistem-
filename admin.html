@@ -36,7 +36,6 @@ td, th { border:1px solid #0f0; padding:6px; text-align: left; }
         <tbody id="users"></tbody>
     </table>
 
-    <!-- Кнопка Earn -->
     <button onclick="showEarnEditor()">🎯 Earn Editor</button>
 
     <div id="earn-editor" style="display:none; margin-top:20px;">
@@ -105,7 +104,7 @@ function renderEarnBlocks() {
         blockEl.innerHTML = `
             <h3>Block ${index+1}</h3>
             <label>Title: <input type="text" value="${block.title || ''}" onchange="updateBlock(${index}, 'title', this.value)"></label><br>
-            <label>Text: <input type="text" value="${block.text || ''}" onchange="updateBlock(${index}, 'text', this.value)"></label><br>
+            <label>Reward (score): <input type="number" value="${block.reward || ''}" onchange="updateBlock(${index}, 'reward', Number(this.value))"></label><br>
             <label>Icon/Emoji: <input type="text" value="${block.icon || ''}" onchange="updateBlock(${index}, 'icon', this.value)"></label><br>
             <label>Link: <input type="text" value="${block.link || ''}" onchange="updateBlock(${index}, 'link', this.value)"></label><br>
             <div class="earn-controls">
@@ -156,7 +155,7 @@ function loadEarnBlocks() {
     fetch("/earn-blocks")
     .then(res => res.json())
     .then(data => {
-        earnBlocks = Array(MAX_BLOCKS).fill(null); // завжди 35 елементів
+        earnBlocks = Array(MAX_BLOCKS).fill(null);
         if(Array.isArray(data)){
             for(let i=0;i<data.length;i++){
                 earnBlocks[i] = data[i] || {};

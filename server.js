@@ -1,3 +1,4 @@
+
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -24,6 +25,7 @@ const pool = new Pool({
 
 /* ===== INIT DB ===== */
 async function initDB() {
+  // Таблиця користувачів
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
@@ -32,6 +34,7 @@ async function initDB() {
     )
   `);
 
+  // Таблиця очок
   await pool.query(`
     CREATE TABLE IF NOT EXISTS scores (
       user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -39,10 +42,20 @@ async function initDB() {
     )
   `);
 
+  // Таблиця earn-блоків
   await pool.query(`
     CREATE TABLE IF NOT EXISTS earn_blocks (
       id SERIAL PRIMARY KEY,
       data JSONB
+    )
+  `);
+
+  // Таблиця виконаних earn-блоків
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS earn_done (
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      block_id INTEGER,
+      PRIMARY KEY (user_id, block_id)
     )
   `);
 
@@ -152,6 +165,39 @@ app.post("/admin/earn-blocks", async (req, res) => {
     for (const block of blocks) {
       await pool.query("INSERT INTO earn_blocks (data) VALUES ($1)", [block]);
     }
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false });
+  }
+});
+
+/* ===== COMPLETE EARN BLOCK ===== */
+app.post("/earn/complete", async (req, res) => {
+  const { userId, blockId, reward } = req.body;
+  if (!userId || blockId === undefined) return res.status(400).json({ ok: false });
+
+  try {
+    // Перевірка чи вже виконано
+    const check = await pool.query(
+      "SELECT 1 FROM earn_done WHERE user_id=$1 AND block_id=$2",
+      [userId, blockId]
+    );
+
+    if (check.rows.length) return res.json({ ok: false, already: true });
+
+    // Додаємо очки
+    await pool.query(
+      "UPDATE scores SET score = score + $1 WHERE user_id = $2",
+      [reward || 0, userId]
+    );
+
+    // Фіксуємо виконання
+    await pool.query(
+      "INSERT INTO earn_done (user_id, block_id) VALUES ($1, $2)",
+      [userId, blockId]
+    );
+
     res.json({ ok: true });
   } catch (e) {
     console.error(e);
