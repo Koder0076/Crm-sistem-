@@ -14,6 +14,7 @@ td, th { border:1px solid #0f0; padding:6px; text-align: left; }
 .earn-block input { width: 90%; margin-bottom: 5px; }
 .earn-controls { display:flex; gap:5px; margin-top:5px; }
 .save-btn { background: #0f0; color: #000; border: none; padding: 10px; cursor: pointer; margin-top: 10px; width:100%; }
+.delete-btn { background:red; color:white; margin-top:20px; border:none; }
 </style>
 </head>
 <body>
@@ -43,6 +44,9 @@ td, th { border:1px solid #0f0; padding:6px; text-align: left; }
         <div id="earn-blocks-container"></div>
         <button class="save-btn" onclick="saveEarnBlocks()">💾 Save All Changes</button>
     </div>
+
+    <!-- 🔴 DELETE ALL DATA -->
+    <button class="delete-btn" onclick="deleteAllData()">❌ DELETE ALL DATA</button>
 </div>
 
 <script>
@@ -50,6 +54,7 @@ const ADMIN_PASSWORD = "dandelion0514";
 const MAX_BLOCKS = 35;
 let earnBlocks = Array(MAX_BLOCKS).fill(null);
 
+/* ===== LOGIN ===== */
 function login() {
     const password = document.getElementById("pass").value;
     if(password !== ADMIN_PASSWORD) {
@@ -61,6 +66,7 @@ function login() {
     loadEarnBlocks();
 }
 
+/* ===== USERS ===== */
 function loadUsers() {
     fetch("/admin/users", {
         method: "POST",
@@ -85,8 +91,7 @@ function loadUsers() {
     .catch(err => console.error(err));
 }
 
-// ==================== Earn Editor ====================
-
+/* ===== EARN EDITOR ===== */
 function showEarnEditor() {
     document.getElementById("earn-editor").style.display = "block";
     renderEarnBlocks();
@@ -103,10 +108,26 @@ function renderEarnBlocks() {
 
         blockEl.innerHTML = `
             <h3>Block ${index+1}</h3>
-            <label>Title: <input type="text" value="${block.title || ''}" onchange="updateBlock(${index}, 'title', this.value)"></label><br>
-            <label>Reward (score): <input type="number" value="${block.reward || ''}" onchange="updateBlock(${index}, 'reward', Number(this.value))"></label><br>
-            <label>Icon/Emoji: <input type="text" value="${block.icon || ''}" onchange="updateBlock(${index}, 'icon', this.value)"></label><br>
-            <label>Link: <input type="text" value="${block.link || ''}" onchange="updateBlock(${index}, 'link', this.value)"></label><br>
+            <label>Title:
+                <input type="text" value="${block.title || ''}"
+                onchange="updateBlock(${index}, 'title', this.value)">
+            </label><br>
+
+            <label>Reward (score):
+                <input type="number" value="${block.reward || ''}"
+                onchange="updateBlock(${index}, 'reward', Number(this.value))">
+            </label><br>
+
+            <label>Icon/Emoji:
+                <input type="text" value="${block.icon || ''}"
+                onchange="updateBlock(${index}, 'icon', this.value)">
+            </label><br>
+
+            <label>Link:
+                <input type="text" value="${block.link || ''}"
+                onchange="updateBlock(${index}, 'link', this.value)">
+            </label><br>
+
             <div class="earn-controls">
                 <button onclick="moveBlockLeft(${index})">← Left</button>
                 <button onclick="moveBlockRight(${index})">Right →</button>
@@ -122,7 +143,6 @@ function updateBlock(index, key, value) {
     earnBlocks[index][key] = value;
 }
 
-// Гортання блоків
 function moveBlockLeft(index) {
     if (index === 0) return;
     [earnBlocks[index-1], earnBlocks[index]] = [earnBlocks[index], earnBlocks[index-1]];
@@ -135,8 +155,7 @@ function moveBlockRight(index) {
     renderEarnBlocks();
 }
 
-// ==================== Збереження ====================
-
+/* ===== SAVE BLOCKS ===== */
 function saveEarnBlocks() {
     fetch("/admin/earn-blocks", {
         method: "POST",
@@ -150,7 +169,6 @@ function saveEarnBlocks() {
     .catch(err => console.error(err));
 }
 
-// Завантаження блоків з сервера
 function loadEarnBlocks() {
     fetch("/earn-blocks")
     .then(res => res.json())
@@ -162,6 +180,33 @@ function loadEarnBlocks() {
             }
         }
         renderEarnBlocks();
+    })
+    .catch(err => console.error(err));
+}
+
+/* ===== DELETE ALL DATA ===== */
+function deleteAllData() {
+    const pass = prompt("Enter admin password to DELETE EVERYTHING:");
+    if (pass !== ADMIN_PASSWORD) {
+        alert("WRONG PASSWORD");
+        return;
+    }
+
+    if (!confirm("⚠️ THIS WILL DELETE ALL DATA FOREVER. CONTINUE?")) return;
+
+    fetch("/admin/delete-all", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: ADMIN_PASSWORD })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.ok) {
+            alert("🔥 ALL DATA DELETED");
+            location.reload();
+        } else {
+            alert("ERROR");
+        }
     })
     .catch(err => console.error(err));
 }

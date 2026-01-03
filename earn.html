@@ -79,18 +79,20 @@ async function loadScore(userId) {
         const res = await fetch(`/score/${userId}`);
         const data = await res.json();
         const pointsElem = document.getElementById("points");
-        if(pointsElem) pointsElem.textContent = data.score || 0;
-    } catch(err) { console.error(err); }
+        if (pointsElem) pointsElem.textContent = data.score || 0;
+    } catch (err) {
+        console.error(err);
+    }
 }
 
-// Завантаження Earn-блоків з сервера
+// Завантаження Earn-блоків
 fetch("/earn-blocks")
-.then(res => res.json())
-.then(data => {
-    earnBlocks = data.slice(0, 35);
-    renderBlocks(earnBlocks, earnContainer);
-})
-.catch(err => console.error(err));
+    .then(res => res.json())
+    .then(data => {
+        earnBlocks = data.slice(0, 35);
+        renderBlocks(earnBlocks, earnContainer);
+    })
+    .catch(err => console.error(err));
 
 // Відображення Earn-блоків
 function renderBlocks(blocks, container) {
@@ -107,18 +109,22 @@ function renderBlocks(blocks, container) {
                 <div class="task-icon">${block.icon || '★'}</div>
                 <div class="task-text">
                     <h3>${block.title || ''}</h3>
-                    ${block.completed 
-                        ? '<p class="status">Completed</p>' 
-                        : `<p class="reward">+${block.reward || 0} <span class="coin">●</span></p>`}
+                    ${
+                        block.completed
+                            ? '<p class="status">Completed</p>'
+                            : `<p class="reward">+${block.reward || 0} <span class="coin">●</span></p>`
+                    }
                 </div>
             </div>
             ${block.completed ? '<div class="check">✓</div>' : '<div class="arrow">›</div>'}
         `;
 
-        // Клік по блоку для нарахування очок
+        // 👉 ОНОВЛЕНИЙ click handler (АНТИ-АБЮЗ)
         if (!block.completed && block.link && uid) {
             el.style.cursor = "pointer";
+
             el.addEventListener("click", async () => {
+                el.style.pointerEvents = "none"; // 🔒 одразу блокуємо повторний клік
                 window.open(block.link, "_blank");
 
                 try {
@@ -138,8 +144,15 @@ function renderBlocks(blocks, container) {
                         block.completed = true;
                         renderBlocks(earnBlocks, earnContainer);
                         loadScore(uid);
+
+                        // ⏱ повертаємо на головну
+                        setTimeout(() => {
+                            window.location.href = "index.html";
+                        }, 500);
                     }
-                } catch(err) { console.error(err); }
+                } catch (err) {
+                    console.error(err);
+                }
             });
         }
 
