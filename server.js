@@ -50,6 +50,7 @@ async function initDB() {
     CREATE TABLE IF NOT EXISTS earn_done (
       user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       block_id INTEGER,
+      completed_at TIMESTAMP DEFAULT NOW(),
       PRIMARY KEY (user_id, block_id)
     )
   `);
@@ -81,6 +82,7 @@ app.post("/register", async (req, res) => {
     );
 
     const uid = result.rows[0].id;
+
     await pool.query(
       "INSERT INTO scores (user_id, score) VALUES ($1, 0)",
       [uid]
@@ -105,24 +107,6 @@ app.get("/score/:uid", async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ score: 0 });
-  }
-});
-
-/* ===== ADD SCORE ===== */
-app.post("/score", async (req, res) => {
-  const { id, score } = req.body;
-  if (!id || score === undefined || score === null)
-    return res.status(400).json({ ok: false });
-
-  try {
-    await pool.query(
-      "UPDATE scores SET score = score + $1 WHERE user_id = $2",
-      [score, id]
-    );
-    res.json({ ok: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ ok: false });
   }
 });
 
@@ -181,20 +165,34 @@ app.post("/admin/earn-blocks", async (req, res) => {
   }
 });
 
-/* ===== COMPLETE EARN BLOCK ===== */
+/* ===== COMPLETE EARN (ONE TIME + 23h) ===== */
 app.post("/earn/complete", async (req, res) => {
   const { userId, blockId, reward } = req.body;
   if (!userId || blockId === undefined)
     return res.status(400).json({ ok: false });
 
   try {
-    const check = await pool.query(
-      "SELECT 1 FROM earn_done WHERE user_id=$1 AND block_id=$2",
-      [userId, blockId]
-    );
+    const check = await pool.query(`
+      SELECT completed_at
+      FROM earn_done
+      WHERE user_id=$1 AND block_id=$2
+    `, [userId, blockId]);
 
-    if (check.rows.length)
-      return res.json({ ok: false, already: true });
+    if (check.rows.length) {
+      const completedAt = new Date(check.rows[0].completed_at);
+      const now = new Date();
+      const diffHours = (now - completedAt) / 1000 / 60 / 60;
+
+      if (diffHours < 23) {
+        return res.json({ ok: false, already: true });
+      }
+
+      // якщо більше 23 годин — очищаємо старий
+      await pool.query(
+        "DELETE FROM earn_done WHERE user_id=$1 AND block_id=$2",
+        [userId, blockId]
+      );
+    }
 
     await pool.query(
       "UPDATE scores SET score = score + $1 WHERE user_id = $2",
@@ -213,17 +211,17 @@ app.post("/earn/complete", async (req, res) => {
   }
 });
 
-/* ===== DELETE ALL DATA ===== */
+/* ===== DELETE ALL DATA (ID НЕ СКИДАЄТЬСЯ) ===== */
 app.post("/admin/delete-all", async (req, res) => {
   const { password } = req.body;
   if (password !== ADMIN_PASSWORD)
     return res.status(403).json({ ok: false });
 
   try {
-    await pool.query("TRUNCATE earn_done RESTART IDENTITY CASCADE");
-    await pool.query("TRUNCATE earn_blocks RESTART IDENTITY CASCADE");
-    await pool.query("TRUNCATE scores RESTART IDENTITY CASCADE");
-    await pool.query("TRUNCATE users RESTART IDENTITY CASCADE");
+    await pool.query("TRUNCATE earn_done CASCADE");
+    await pool.query("TRUNCATE earn_blocks CASCADE");
+    await pool.query("TRUNCATE scores CASCADE");
+    await pool.query("TRUNCATE users CASCADE");
 
     res.json({ ok: true });
   } catch (e) {
@@ -232,5 +230,7 @@ app.post("/admin/delete-all", async (req, res) => {
   }
 });
 
-/* ===== START SERVER ===== */
-app.listen(PORT, () => console.log("🚀 Server running on", PORT));
+/* ===== START ===== */
+app.listen(PORT, () =>
+  console.log("🚀 Server running on", PORT)
+);
