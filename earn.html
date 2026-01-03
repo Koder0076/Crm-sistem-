@@ -39,6 +39,12 @@
     text-align:center;
 }
 
+.task-icon img {
+    width:32px;
+    height:32px;
+    object-fit:contain;
+}
+
 .task-text h3 {
     margin:0;
     font-size:16px;
@@ -69,7 +75,6 @@
 <!-- ===== SPECIALS (STATIC) ===== -->
 <section class="task-section">
     <h2 class="section-title">Specials</h2>
-
     <div class="task-card">
         <div class="task-info">
             <div class="task-icon">🚀</div>
@@ -80,7 +85,6 @@
         </div>
         <div class="arrow">›</div>
     </div>
-
     <div class="task-card">
         <div class="task-info">
             <div class="task-icon">★</div>
@@ -91,7 +95,6 @@
         </div>
         <div class="arrow">›</div>
     </div>
-
     <div class="task-card completed">
         <div class="task-info">
             <div class="task-icon">○</div>
@@ -118,6 +121,10 @@ let earnBlocks = [];
 const earnContainer = document.getElementById("earn-container");
 const uid = localStorage.getItem("uid");
 
+if (!uid) {
+    console.error("UID missing! User not logged in.");
+}
+
 /* ===== LOAD USER SCORE ===== */
 async function loadScore(userId) {
     try {
@@ -130,28 +137,37 @@ async function loadScore(userId) {
     }
 }
 
-/* ===== LOAD EARN BLOCKS (WITH UID) ===== */
-fetch(`/earn-blocks/${uid}`)
-    .then(res => res.json())
-    .then(data => {
+/* ===== LOAD EARN BLOCKS ===== */
+async function loadEarnBlocks() {
+    if (!uid) return;
+
+    try {
+        const res = await fetch(`/earn-blocks/${uid}`);
+        const data = await res.json();
         earnBlocks = data.slice(0, 35);
         renderBlocks();
-    })
-    .catch(err => console.error(err));
+    } catch (err) {
+        console.error(err);
+    }
+}
 
 /* ===== RENDER BLOCKS ===== */
 function renderBlocks() {
     earnContainer.innerHTML = "";
 
-    earnBlocks.forEach((block, index) => {
+    earnBlocks.forEach(block => {
         if (!block || !block.title) return;
 
         const el = document.createElement("div");
         el.className = "task-card" + (block.completed ? " completed" : "");
 
+        const iconHTML = block.icon
+            ? `<img src="${block.icon}" alt="icon">`
+            : (block.iconEmoji || "★");
+
         el.innerHTML = `
             <div class="task-info">
-                <div class="task-icon">${block.icon || "★"}</div>
+                <div class="task-icon">${iconHTML}</div>
                 <div class="task-text">
                     <h3>${block.title}</h3>
                     ${
@@ -167,7 +183,7 @@ function renderBlocks() {
         /* ===== CLICK HANDLER ===== */
         if (!block.completed && block.link && uid) {
             el.addEventListener("click", async () => {
-                el.style.pointerEvents = "none"; // 🔒 анти-спам
+                el.style.pointerEvents = "none"; // анти-спам
                 window.open(block.link, "_blank");
 
                 try {
@@ -175,16 +191,15 @@ function renderBlocks() {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                            userId: uid,
-                            blockId: index,
+                            userId: Number(uid),
+                            blockId: block.id,
                             reward: block.reward || 0
                         })
                     });
 
                     const data = await res.json();
 
-                    if (data.already) return;
-
+                    if (data.already) return; // якщо вже виконано
                     if (data.ok) {
                         block.completed = true;
                         renderBlocks();
@@ -203,6 +218,8 @@ function renderBlocks() {
         earnContainer.appendChild(el);
     });
 }
+
+loadEarnBlocks();
 </script>
 
 </body>
