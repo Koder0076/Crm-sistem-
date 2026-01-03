@@ -13,224 +13,281 @@ app.use(express.static(__dirname));
 
 /* ===== ROOT ===== */
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
 /* ===== POSTGRES ===== */
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
 });
 
 /* ===== INIT DB ===== */
 async function initDB() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
-      email TEXT UNIQUE,
-      username TEXT
-    )
-  `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+            id SERIAL PRIMARY KEY,
+            email TEXT UNIQUE,
+            username TEXT
+        )
+    `);
 
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS scores (
-      user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-      score INTEGER DEFAULT 0
-    )
-  `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS scores (
+            user_id INTEGER PRIMARY KEY
+            REFERENCES users(id) ON DELETE CASCADE,
+            score INTEGER DEFAULT 0
+        )
+    `);
 
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS earn_blocks (
-      id SERIAL PRIMARY KEY,
-      data JSONB
-    )
-  `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS earn_blocks (
+            id SERIAL PRIMARY KEY,
+            data JSONB
+        )
+    `);
 
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS earn_done (
-      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-      block_id INTEGER,
-      completed_at TIMESTAMP DEFAULT NOW(),
-      PRIMARY KEY (user_id, block_id)
-    )
-  `);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS earn_done (
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            block_id INTEGER,
+            completed_at TIMESTAMP DEFAULT NOW(),
+            PRIMARY KEY (user_id, block_id)
+        )
+    `);
 
-  console.log("✅ Database ready");
+    console.log("✅ Database ready");
 }
 
 initDB().catch(err => {
-  console.error("DB ERROR:", err);
-  process.exit(1);
+    console.error("DB ERROR:", err);
+    process.exit(1);
 });
 
 /* ===== REGISTER ===== */
 app.post("/register", async (req, res) => {
-  const { email, user } = req.body;
-  if (!email || !user) return res.status(400).json({ ok: false });
+    const { email, user } = req.body;
+    if (!email || !user) {
+        return res.status(400).json({ ok: false });
+    }
 
-  try {
-    const exists = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [email]
-    );
-    if (exists.rows.length)
-      return res.json({ ok: false, error: "exists" });
+    try {
+        const exists = await pool.query(
+            "SELECT id FROM users WHERE email = $1",
+            [email]
+        );
 
-    const result = await pool.query(
-      "INSERT INTO users (email, username) VALUES ($1, $2) RETURNING id",
-      [email, user]
-    );
+        if (exists.rows.length) {
+            return res.json({ ok: false, error: "exists" });
+        }
 
-    const uid = result.rows[0].id;
+        const result = await pool.query(
+            "INSERT INTO users (email, username) VALUES ($1, $2) RETURNING id",
+            [email, user]
+        );
 
-    await pool.query(
-      "INSERT INTO scores (user_id, score) VALUES ($1, 0)",
-      [uid]
-    );
+        const uid = result.rows[0].id;
 
-    res.json({ ok: true, id: uid });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ ok: false });
-  }
+        await pool.query(
+            "INSERT INTO scores (user_id, score) VALUES ($1, 0)",
+            [uid]
+        );
+
+        res.json({ ok: true, id: uid });
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ ok: false });
+    }
 });
 
 /* ===== GET SCORE ===== */
 app.get("/score/:uid", async (req, res) => {
-  const uid = Number(req.params.uid);
-  try {
-    const result = await pool.query(
-      "SELECT score FROM scores WHERE user_id = $1",
-      [uid]
-    );
-    res.json({ score: result.rows[0]?.score || 0 });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ score: 0 });
-  }
+    const uid = Number(req.params.uid);
+
+    try {
+        const result = await pool.query(
+            "SELECT score FROM scores WHERE user_id = $1",
+            [uid]
+        );
+
+        res.json({ score: result.rows[0]?.score || 0 });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ score: 0 });
+    }
+});
+
+/* ===== ADD SCORE ===== */
+app.post("/score", async (req, res) => {
+    const { id, score } = req.body;
+
+    if (!id || score === undefined) {
+        return res.status(400).json({ ok: false });
+    }
+
+    try {
+        await pool.query(
+            "UPDATE scores SET score = score + $1 WHERE user_id = $2",
+            [score, id]
+        );
+
+        res.json({ ok: true });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ ok: false });
+    }
 });
 
 /* ===== ADMIN ===== */
 const ADMIN_PASSWORD = "dandelion0514";
 
+/* USERS LIST */
 app.post("/admin/users", async (req, res) => {
-  const { password } = req.body;
-  if (password !== ADMIN_PASSWORD)
-    return res.status(403).json({ error: "forbidden" });
+    const { password } = req.body;
 
-  try {
-    const result = await pool.query(`
-      SELECT users.id, users.email, users.username, scores.score
-      FROM users
-      LEFT JOIN scores ON users.id = scores.user_id
-      ORDER BY users.id
-    `);
-    res.json(result.rows);
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ ok: false });
-  }
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(403).json({ error: "forbidden" });
+    }
+
+    try {
+        const result = await pool.query(`
+            SELECT
+                users.id,
+                users.email,
+                users.username,
+                scores.score
+            FROM users
+            LEFT JOIN scores ON users.id = scores.user_id
+            ORDER BY users.id
+        `);
+
+        res.json(result.rows);
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ ok: false });
+    }
 });
 
-/* ===== EARN BLOCKS ===== */
+/* ===== EARN BLOCKS (PUBLIC) ===== */
 app.get("/earn-blocks", async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT data FROM earn_blocks ORDER BY id ASC"
-    );
-    res.json(result.rows.map(r => r.data));
-  } catch (e) {
-    console.error(e);
-    res.status(500).json([]);
-  }
+    try {
+        const result = await pool.query(
+            "SELECT data FROM earn_blocks ORDER BY id ASC"
+        );
+
+        res.json(result.rows.map(r => r.data));
+    } catch (e) {
+        console.error(e);
+        res.status(500).json([]);
+    }
 });
 
+/* ===== EARN BLOCKS (WITH USER CHECK) ===== */
+app.get("/earn-blocks/:uid", async (req, res) => {
+    const uid = Number(req.params.uid);
+
+    try {
+        const result = await pool.query(`
+            SELECT eb.data, eb.id
+            FROM earn_blocks eb
+            LEFT JOIN earn_done ed
+              ON ed.block_id = eb.id AND ed.user_id = $1
+            WHERE ed.completed_at IS NULL
+               OR ed.completed_at < NOW() - INTERVAL '23 hours'
+            ORDER BY eb.id
+        `, [uid]);
+
+        res.json(result.rows.map(r => r.data));
+    } catch (e) {
+        console.error(e);
+        res.status(500).json([]);
+    }
+});
+
+/* ===== ADMIN EARN BLOCKS ===== */
 app.post("/admin/earn-blocks", async (req, res) => {
-  const { password, blocks } = req.body;
-  if (password !== ADMIN_PASSWORD)
-    return res.status(403).json({ error: "forbidden" });
+    const { password, blocks } = req.body;
 
-  try {
-    await pool.query("DELETE FROM earn_blocks");
-    for (const block of blocks) {
-      await pool.query(
-        "INSERT INTO earn_blocks (data) VALUES ($1)",
-        [block]
-      );
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(403).json({ error: "forbidden" });
     }
-    res.json({ ok: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ ok: false });
-  }
+
+    try {
+        await pool.query("DELETE FROM earn_blocks");
+
+        for (const block of blocks) {
+            await pool.query(
+                "INSERT INTO earn_blocks (data) VALUES ($1)",
+                [block]
+            );
+        }
+
+        res.json({ ok: true });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ ok: false });
+    }
 });
 
-/* ===== COMPLETE EARN (ONE TIME + 23h) ===== */
+/* ===== COMPLETE EARN BLOCK ===== */
 app.post("/earn/complete", async (req, res) => {
-  const { userId, blockId, reward } = req.body;
-  if (!userId || blockId === undefined)
-    return res.status(400).json({ ok: false });
+    const { userId, blockId, reward } = req.body;
 
-  try {
-    const check = await pool.query(`
-      SELECT completed_at
-      FROM earn_done
-      WHERE user_id=$1 AND block_id=$2
-    `, [userId, blockId]);
-
-    if (check.rows.length) {
-      const completedAt = new Date(check.rows[0].completed_at);
-      const now = new Date();
-      const diffHours = (now - completedAt) / 1000 / 60 / 60;
-
-      if (diffHours < 23) {
-        return res.json({ ok: false, already: true });
-      }
-
-      // якщо більше 23 годин — очищаємо старий
-      await pool.query(
-        "DELETE FROM earn_done WHERE user_id=$1 AND block_id=$2",
-        [userId, blockId]
-      );
+    if (!userId || blockId === undefined) {
+        return res.status(400).json({ ok: false });
     }
 
-    await pool.query(
-      "UPDATE scores SET score = score + $1 WHERE user_id = $2",
-      [reward || 0, userId]
-    );
+    try {
+        const check = await pool.query(
+            "SELECT 1 FROM earn_done WHERE user_id = $1 AND block_id = $2",
+            [userId, blockId]
+        );
 
-    await pool.query(
-      "INSERT INTO earn_done (user_id, block_id) VALUES ($1, $2)",
-      [userId, blockId]
-    );
+        if (check.rows.length) {
+            return res.json({ ok: false, already: true });
+        }
 
-    res.json({ ok: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ ok: false });
-  }
+        await pool.query(
+            "UPDATE scores SET score = score + $1 WHERE user_id = $2",
+            [reward || 0, userId]
+        );
+
+        await pool.query(
+            "INSERT INTO earn_done (user_id, block_id) VALUES ($1, $2)",
+            [userId, blockId]
+        );
+
+        res.json({ ok: true });
+
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ ok: false });
+    }
 });
 
-/* ===== DELETE ALL DATA (ID НЕ СКИДАЄТЬСЯ) ===== */
+/* ===== DELETE ALL DATA ===== */
 app.post("/admin/delete-all", async (req, res) => {
-  const { password } = req.body;
-  if (password !== ADMIN_PASSWORD)
-    return res.status(403).json({ ok: false });
+    const { password } = req.body;
 
-  try {
-    await pool.query("TRUNCATE earn_done CASCADE");
-    await pool.query("TRUNCATE earn_blocks CASCADE");
-    await pool.query("TRUNCATE scores CASCADE");
-    await pool.query("TRUNCATE users CASCADE");
+    if (password !== ADMIN_PASSWORD) {
+        return res.status(403).json({ ok: false });
+    }
 
-    res.json({ ok: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ ok: false });
-  }
+    try {
+        await pool.query("TRUNCATE earn_done RESTART IDENTITY CASCADE");
+        await pool.query("TRUNCATE earn_blocks RESTART IDENTITY CASCADE");
+        await pool.query("TRUNCATE scores RESTART IDENTITY CASCADE");
+        await pool.query("TRUNCATE users RESTART IDENTITY CASCADE");
+
+        res.json({ ok: true });
+    } catch (e) {
+        console.error(e);
+        res.status(500).json({ ok: false });
+    }
 });
 
-/* ===== START ===== */
-app.listen(PORT, () =>
-  console.log("🚀 Server running on", PORT)
-);
+/* ===== START SERVER ===== */
+app.listen(PORT, () => {
+    console.log("🚀 Server running on", PORT);
+});

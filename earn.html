@@ -4,16 +4,57 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Notcoin Tasks UI</title>
+
 <link rel="stylesheet" href="style2.css">
+
 <style>
-/* Стиль блоків як Specials */
+/* ===== EARN STYLE ===== */
 .task-section { margin-bottom: 30px; }
-.task-card.completed .task-text p { color: gray; }
-.task-info { display: flex; align-items: center; }
-.task-icon { font-size: 30px; margin-right: 10px; width: 40px; text-align: center; }
-.task-text h3 { margin: 0; font-size: 16px; }
-.task-text p { margin: 2px 0 0 0; font-size: 14px; }
-.arrow, .check { font-size: 20px; margin-left: 10px; }
+
+.task-card {
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:14px;
+    margin-bottom:12px;
+    border-radius:12px;
+    background:#111;
+    cursor:pointer;
+}
+
+.task-card.completed {
+    opacity:0.5;
+    cursor:default;
+}
+
+.task-info {
+    display:flex;
+    align-items:center;
+}
+
+.task-icon {
+    font-size:30px;
+    margin-right:10px;
+    width:40px;
+    text-align:center;
+}
+
+.task-text h3 {
+    margin:0;
+    font-size:16px;
+}
+
+.task-text p {
+    margin:4px 0 0;
+    font-size:14px;
+}
+
+.reward { color:#0f0; }
+.status { color:#aaa; }
+
+.arrow, .check {
+    font-size:20px;
+}
 </style>
 </head>
 
@@ -21,62 +62,63 @@
 
 <div class="app-container">
 
-    <header class="header">
-        <a href="index.html" class="back-btn">‹ Back</a>
-    </header>
+<header class="header">
+    <a href="index.html" class="back-btn">‹ Back</a>
+</header>
 
-    <!-- Specials -->
-    <section class="task-section">
-        <h2 class="section-title">Specials <span class="count">1/2</span></h2>
+<!-- ===== SPECIALS (STATIC) ===== -->
+<section class="task-section">
+    <h2 class="section-title">Specials</h2>
 
-        <div class="task-card">
-            <div class="task-info">
-                <div class="task-icon rocket">🚀</div>
-                <div class="task-text">
-                    <h3>Subscription channel</h3>
-                    <p class="reward">+300,000 <span class="coin">●</span></p>
-                </div>
+    <div class="task-card">
+        <div class="task-info">
+            <div class="task-icon">🚀</div>
+            <div class="task-text">
+                <h3>Subscription channel</h3>
+                <p class="reward">+300,000 ●</p>
             </div>
-            <div class="arrow">›</div>
         </div>
+        <div class="arrow">›</div>
+    </div>
 
-        <div class="task-card">
-            <div class="task-info">
-                <div class="task-icon star">★</div>
-                <div class="task-text">
-                    <h3>Telegram Premium</h3>
-                    <p class="reward">+3,000,000 <span class="coin">●</span></p>
-                </div>
+    <div class="task-card">
+        <div class="task-info">
+            <div class="task-icon">★</div>
+            <div class="task-text">
+                <h3>Telegram Premium</h3>
+                <p class="reward">+3,000,000 ●</p>
             </div>
-            <div class="arrow">›</div>
         </div>
+        <div class="arrow">›</div>
+    </div>
 
-        <div class="task-card completed">
-            <div class="task-info">
-                <div class="task-icon circle">○</div>
-                <div class="task-text">
-                    <h3>Follow Community</h3>
-                    <p class="status">Completed</p>
-                </div>
+    <div class="task-card completed">
+        <div class="task-info">
+            <div class="task-icon">○</div>
+            <div class="task-text">
+                <h3>Follow Community</h3>
+                <p class="status">Completed</p>
             </div>
-            <div class="check">✓</div>
         </div>
-    </section>
+        <div class="check">✓</div>
+    </div>
+</section>
 
-    <!-- Earn -->
-    <section class="task-section">
-        <h2 class="section-title">Earn</h2>
-        <div id="earn-container"></div>
-    </section>
+<!-- ===== EARN (DYNAMIC) ===== -->
+<section class="task-section">
+    <h2 class="section-title">Earn</h2>
+    <div id="earn-container"></div>
+</section>
 
 </div>
 
 <script>
+/* ===== GLOBAL ===== */
 let earnBlocks = [];
 const earnContainer = document.getElementById("earn-container");
-let uid = localStorage.getItem("uid");
+const uid = localStorage.getItem("uid");
 
-/* ===== LOAD SCORE ===== */
+/* ===== LOAD USER SCORE ===== */
 async function loadScore(userId) {
     try {
         const res = await fetch(`/score/${userId}`);
@@ -88,21 +130,21 @@ async function loadScore(userId) {
     }
 }
 
-/* ===== LOAD EARN BLOCKS ===== */
-fetch("/earn-blocks")
+/* ===== LOAD EARN BLOCKS (WITH UID) ===== */
+fetch(`/earn-blocks/${uid}`)
     .then(res => res.json())
     .then(data => {
         earnBlocks = data.slice(0, 35);
-        renderBlocks(earnBlocks, earnContainer);
+        renderBlocks();
     })
     .catch(err => console.error(err));
 
 /* ===== RENDER BLOCKS ===== */
-function renderBlocks(blocks, container) {
-    container.innerHTML = "";
+function renderBlocks() {
+    earnContainer.innerHTML = "";
 
-    blocks.forEach((block, index) => {
-        if (!block || (!block.title && !block.reward && !block.icon && !block.link)) return;
+    earnBlocks.forEach((block, index) => {
+        if (!block || !block.title) return;
 
         const el = document.createElement("div");
         el.className = "task-card" + (block.completed ? " completed" : "");
@@ -111,23 +153,21 @@ function renderBlocks(blocks, container) {
             <div class="task-info">
                 <div class="task-icon">${block.icon || "★"}</div>
                 <div class="task-text">
-                    <h3>${block.title || ""}</h3>
+                    <h3>${block.title}</h3>
                     ${
                         block.completed
-                            ? '<p class="status">Completed</p>'
-                            : `<p class="reward">+${block.reward || 0} <span class="coin">●</span></p>`
+                        ? `<p class="status">Completed</p>`
+                        : `<p class="reward">+${block.reward || 0} ●</p>`
                     }
                 </div>
             </div>
-            ${block.completed ? '<div class="check">✓</div>' : '<div class="arrow">›</div>'}
+            ${block.completed ? `<div class="check">✓</div>` : `<div class="arrow">›</div>`}
         `;
 
-        /* ===== CLICK HANDLER (ANTI-ABUSE) ===== */
+        /* ===== CLICK HANDLER ===== */
         if (!block.completed && block.link && uid) {
-            el.style.cursor = "pointer";
-
             el.addEventListener("click", async () => {
-                el.style.pointerEvents = "none"; // 🔒 блокуємо повторний клік
+                el.style.pointerEvents = "none"; // 🔒 анти-спам
                 window.open(block.link, "_blank");
 
                 try {
@@ -143,12 +183,13 @@ function renderBlocks(blocks, container) {
 
                     const data = await res.json();
 
+                    if (data.already) return;
+
                     if (data.ok) {
                         block.completed = true;
-                        renderBlocks(earnBlocks, earnContainer);
+                        renderBlocks();
                         loadScore(uid);
 
-                        // ⏱ редірект назад
                         setTimeout(() => {
                             window.location.href = "index.html";
                         }, 500);
@@ -159,7 +200,7 @@ function renderBlocks(blocks, container) {
             });
         }
 
-        container.appendChild(el);
+        earnContainer.appendChild(el);
     });
 }
 </script>
