@@ -26,7 +26,7 @@ const pool = new Pool({
 async function initDB() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
-      id SERIAL PRIMARY KEY,
+      id INTEGER PRIMARY KEY,
       email TEXT UNIQUE,
       username TEXT
     )
@@ -68,6 +68,7 @@ app.post("/register", async (req, res) => {
   if (!email || !user) return res.status(400).json({ ok: false });
 
   try {
+    // перевіряємо чи користувач вже існує
     const exists = await pool.query(
       "SELECT id FROM users WHERE email = $1",
       [email]
@@ -75,18 +76,24 @@ app.post("/register", async (req, res) => {
     if (exists.rows.length)
       return res.json({ ok: false, error: "exists" });
 
-    const result = await pool.query(
-      "INSERT INTO users (email, username) VALUES ($1, $2) RETURNING id",
-      [email, user]
+    // отримуємо останній id
+    const lastIdResult = await pool.query("SELECT MAX(id) AS max_id FROM users");
+    const lastId = lastIdResult.rows[0].max_id || 0;
+    const newId = lastId + 1;
+
+    // вставляємо нового користувача з конкретним id
+    await pool.query(
+      "INSERT INTO users (id, email, username) VALUES ($1, $2, $3)",
+      [newId, email, user]
     );
 
-    const uid = result.rows[0].id;
+    // ініціалізуємо очки
     await pool.query(
       "INSERT INTO scores (user_id, score) VALUES ($1, 0)",
-      [uid]
+      [newId]
     );
 
-    res.json({ ok: true, id: uid });
+    res.json({ ok: true, id: newId });
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false });
