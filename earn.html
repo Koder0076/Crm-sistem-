@@ -16,9 +16,11 @@
 .arrow, .check { font-size: 20px; margin-left: 10px; }
 </style>
 </head>
+
 <body>
 
 <div class="app-container">
+
     <header class="header">
         <a href="index.html" class="back-btn">‹ Back</a>
     </header>
@@ -66,6 +68,7 @@
         <h2 class="section-title">Earn</h2>
         <div id="earn-container"></div>
     </section>
+
 </div>
 
 <script>
@@ -73,7 +76,7 @@ let earnBlocks = [];
 const earnContainer = document.getElementById("earn-container");
 let uid = localStorage.getItem("uid");
 
-// Функція для оновлення score користувача
+/* ===== LOAD SCORE ===== */
 async function loadScore(userId) {
     try {
         const res = await fetch(`/score/${userId}`);
@@ -85,36 +88,20 @@ async function loadScore(userId) {
     }
 }
 
-// Завантаження earn-блоків та completed
-async function loadEarnBlocks() {
-    try {
-        const res = await fetch("/earn-blocks");
-        earnBlocks = await res.json();
-        earnBlocks = earnBlocks.slice(0, 35);
+/* ===== LOAD EARN BLOCKS ===== */
+fetch("/earn-blocks")
+    .then(res => res.json())
+    .then(data => {
+        earnBlocks = data.slice(0, 35);
+        renderBlocks(earnBlocks, earnContainer);
+    })
+    .catch(err => console.error(err));
 
-        // Завантажуємо виконані блоки користувача
-        let doneBlocks = [];
-        if (uid) {
-            const doneRes = await fetch(`/earn-done/${uid}`);
-            doneBlocks = await doneRes.json();
-        }
+/* ===== RENDER BLOCKS ===== */
+function renderBlocks(blocks, container) {
+    container.innerHTML = "";
 
-        // Позначаємо їх як completed
-        earnBlocks.forEach((block, idx) => {
-            if (doneBlocks.includes(idx)) block.completed = true;
-        });
-
-        renderBlocks();
-    } catch (err) {
-        console.error(err);
-    }
-}
-
-// Рендер блоків
-function renderBlocks() {
-    earnContainer.innerHTML = "";
-
-    earnBlocks.forEach((block, index) => {
+    blocks.forEach((block, index) => {
         if (!block || (!block.title && !block.reward && !block.icon && !block.link)) return;
 
         const el = document.createElement("div");
@@ -122,9 +109,9 @@ function renderBlocks() {
 
         el.innerHTML = `
             <div class="task-info">
-                <div class="task-icon">${block.icon || '★'}</div>
+                <div class="task-icon">${block.icon || "★"}</div>
                 <div class="task-text">
-                    <h3>${block.title || ''}</h3>
+                    <h3>${block.title || ""}</h3>
                     ${
                         block.completed
                             ? '<p class="status">Completed</p>'
@@ -135,11 +122,12 @@ function renderBlocks() {
             ${block.completed ? '<div class="check">✓</div>' : '<div class="arrow">›</div>'}
         `;
 
-        // Клікабельність тільки для нових блоків
+        /* ===== CLICK HANDLER (ANTI-ABUSE) ===== */
         if (!block.completed && block.link && uid) {
             el.style.cursor = "pointer";
+
             el.addEventListener("click", async () => {
-                el.style.pointerEvents = "none"; // блокуємо повторний клік
+                el.style.pointerEvents = "none"; // 🔒 блокуємо повторний клік
                 window.open(block.link, "_blank");
 
                 try {
@@ -157,14 +145,13 @@ function renderBlocks() {
 
                     if (data.ok) {
                         block.completed = true;
-                        renderBlocks();
+                        renderBlocks(earnBlocks, earnContainer);
                         loadScore(uid);
 
-                        // ⏱ Прибираємо блок з DOM через 22 години (залишаємо його в БД)
+                        // ⏱ редірект назад
                         setTimeout(() => {
-                            earnBlocks = earnBlocks.filter((_, i) => i !== index);
-                            renderBlocks();
-                        }, 22 * 60 * 60 * 1000); // 22 години
+                            window.location.href = "index.html";
+                        }, 500);
                     }
                 } catch (err) {
                     console.error(err);
@@ -172,12 +159,9 @@ function renderBlocks() {
             });
         }
 
-        earnContainer.appendChild(el);
+        container.appendChild(el);
     });
 }
-
-// Старт
-loadEarnBlocks();
 </script>
 
 </body>
