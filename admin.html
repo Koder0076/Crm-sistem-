@@ -67,6 +67,11 @@ td, th {
         <tbody id="users"></tbody>
     </table>
 
+    <!-- RESET SCORES BUTTON -->
+    <button style="margin-top:20px;background:orange;color:#000"
+        onclick="resetScores()">🔄 RESET ALL SCORES</button>
+
+    <!-- DELETE ALL -->
     <button style="margin-top:20px;background:red;color:#fff"
         onclick="deleteAllData()">❌ DELETE ALL DATA</button>
 </div>
@@ -102,6 +107,25 @@ function loadUsers() {
                 <td>${u.score || 0}</td>
             </tr>`;
         });
+    });
+}
+
+function resetScores() {
+    if (!confirm("⚠️ RESET ALL USER SCORES TO 0?")) return;
+
+    fetch("/admin/reset-scores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: ADMIN_PASSWORD })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.ok) {
+            alert("✅ ALL SCORES RESET TO 0");
+            loadUsers();
+        } else {
+            alert("❌ ERROR");
+        }
     });
 }
 

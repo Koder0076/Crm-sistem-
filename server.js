@@ -153,6 +153,21 @@ app.post("/admin/users", async (req, res) => {
   }
 });
 
+/* ===== RESET ALL SCORES ===== */
+app.post("/admin/reset-scores", async (req, res) => {
+  const { password } = req.body;
+  if (password !== ADMIN_PASSWORD)
+    return res.status(403).json({ ok: false });
+
+  try {
+    await pool.query("UPDATE scores SET score = 0");
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false });
+  }
+});
+
 /* ===== EARN BLOCKS (AUTO CLEAN) ===== */
 app.get("/earn-blocks", async (req, res) => {
   try {
