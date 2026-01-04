@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADMIN – EARN BLOCKS</title>
+
+<style>
+body {
+    background:#000;
+    color:#0f0;
+    font-family: monospace;
+    padding:20px;
+}
+
+input, button {
+    padding:10px;
+    margin:5px 0;
+    width:100%;
+    background:#111;
+    border:1px solid #0f0;
+    color:#0f0;
+}
+
+button { cursor:pointer; }
+
+.earn-block {
+    border:1px solid #0f0;
+    margin:10px 0;
+    padding:10px;
+}
+
+.earn-controls {
+    display:flex;
+    gap:5px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>🔐 ADMIN LOGIN</h2>
+<input id="pass" type="password" placeholder="Password">
+<button onclick="login()">LOGIN</button>
+
+<div id="panel" style="display:none">
+
+    <button onclick="location.href='admin.html'">👑 Users</button>
+
+    <h2>🎯 Earn Blocks</h2>
+    <div id="earn-blocks"></div>
+
+    <button onclick="saveBlocks()" style="background:#0f0;color:#000">
+        💾 Save All
+    </button>
+</div>
+
+<script>
+const ADMIN_PASSWORD = "dandelion0514";
+const MAX_BLOCKS = 35;
+let earnBlocks = Array(MAX_BLOCKS).fill(null);
+
+function login() {
+    if (document.getElementById("pass").value !== ADMIN_PASSWORD) {
+        alert("WRONG PASSWORD");
+        return;
+    }
+    document.getElementById("panel").style.display = "block";
+    loadBlocks();
+}
+
+function loadBlocks() {
+    fetch("/earn-blocks")
+    .then(r=>r.json())
+    .then(data=>{
+        earnBlocks = Array(MAX_BLOCKS).fill(null);
+        data.forEach((b,i)=> earnBlocks[i]=b||{});
+        render();
+    });
+}
+
+function render() {
+    const box = document.getElementById("earn-blocks");
+    box.innerHTML = "";
+
+    earnBlocks.forEach((b,i)=>{
+        if(!b) b={};
+        box.innerHTML += `
+        <div class="earn-block">
+            <h3>Block ${i+1}</h3>
+            <input placeholder="Title" value="${b.title||""}"
+                onchange="upd(${i},'title',this.value)">
+            <input type="number" placeholder="Reward" value="${b.reward||""}"
+                onchange="upd(${i},'reward',Number(this.value))">
+            <input placeholder="Link" value="${b.link||""}"
+                onchange="upd(${i},'link',this.value)">
+            <input type="file" accept="image/*"
+                onchange="icon(event,${i})">
+
+            ${b.icon?`<img src="${b.icon}" width="32">`:""}
+
+            <div class="earn-controls">
+                <button onclick="move(${i},-1)">←</button>
+                <button onclick="move(${i},1)">→</button>
+            </div>
+        </div>`;
+    });
+}
+
+function upd(i,k,v){
+    if(!earnBlocks[i]) earnBlocks[i]={};
+    earnBlocks[i][k]=v;
+}
+
+function icon(e,i){
+    const r=new FileReader();
+    r.onload=()=>{ upd(i,"icon",r.result); render(); };
+    r.readAsDataURL(e.target.files[0]);
+}
+
+function move(i,d){
+    const j=i+d;
+    if(j<0||j>=MAX_BLOCKS) return;
+    [earnBlocks[i],earnBlocks[j]]=[earnBlocks[j],earnBlocks[i]];
+    render();
+}
+
+function saveBlocks(){
+    fetch("/admin/earn-blocks",{
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+            password:ADMIN_PASSWORD,
+            blocks:earnBlocks
+        })
+    }).then(()=>alert("✅ Saved"));
+}
+</script>
+
+</body>
+</html>
