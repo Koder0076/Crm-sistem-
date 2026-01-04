@@ -1,66 +1,170 @@
+
 <!DOCTYPE html>
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<title>Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADMIN</title>
 <style>
-body { font-family: Arial; padding: 20px; background: #111; color: #fff; }
-input, textarea, button { width: 100%; margin: 5px 0; padding: 8px; }
-table { width: 100%; margin-top: 20px; border-collapse: collapse; }
-td, th { border: 1px solid #444; padding: 6px; }
+body { background:#000; color:#0f0; font-family: monospace; padding:20px; }
+input, button { padding:10px; margin:5px 0; width:100%; background: #111; border: 1px solid #0f0; color: #0f0; }
+button { cursor: pointer; }
+table { width:100%; border-collapse:collapse; margin-top:20px; }
+td, th { border:1px solid #0f0; padding:6px; text-align: left; }
+.earn-block { border:1px solid #0f0; margin:10px 0; padding:10px; }
+.earn-block input { width: 90%; margin-bottom: 5px; }
+.earn-controls { display:flex; gap:5px; margin-top:5px; }
+.save-btn { background: #0f0; color: #000; border: none; padding: 10px; cursor: pointer; margin-top: 10px; width:100%; }
 </style>
 </head>
 <body>
 
-<h2>🔐 Admin</h2>
-<input id="pass" placeholder="Admin password">
+<h2>🔐 ADMIN LOGIN</h2>
+<input id="pass" type="password" placeholder="Password">
+<button onclick="login()">LOGIN</button>
 
-<h3>👤 Users</h3>
-<button onclick="loadUsers()">Load users</button>
-<table id="users"></table>
+<div id="panel" style="display:none">
+    <h2>👑 USERS</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Username</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody id="users"></tbody>
+    </table>
 
-<h3>💰 Earn Blocks (JSON)</h3>
-<textarea id="blocks" rows="10"></textarea>
-<button onclick="saveBlocks()">Save blocks</button>
+    <button onclick="showEarnEditor()">🎯 Earn Editor</button>
 
-<h3>⚠️ Danger</h3>
-<button onclick="wipe()">DELETE ALL DATA</button>
+    <div id="earn-editor" style="display:none; margin-top:20px;">
+        <h2>🎯 Earn Blocks</h2>
+        <div id="earn-blocks-container"></div>
+        <button class="save-btn" onclick="saveEarnBlocks()">💾 Save All Changes</button>
+    </div>
+</div>
 
 <script>
-async function loadUsers() {
-  const res = await fetch("/admin/users", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password: pass.value })
-  });
-  const data = await res.json();
-  users.innerHTML =
-    "<tr><th>ID</th><th>Email</th><th>Name</th><th>Score</th></tr>" +
-    data.map(u =>
-      `<tr><td>${u.id}</td><td>${u.email}</td><td>${u.username}</td><td>${u.score}</td></tr>`
-    ).join("");
+const ADMIN_PASSWORD = "dandelion0514";
+const MAX_BLOCKS = 35;
+let earnBlocks = Array(MAX_BLOCKS).fill(null);
+
+function login() {
+    const password = document.getElementById("pass").value;
+    if(password !== ADMIN_PASSWORD) {
+        alert("WRONG PASSWORD");
+        return;
+    }
+    document.getElementById("panel").style.display = "block";
+    loadUsers();
+    loadEarnBlocks();
 }
 
-async function saveBlocks() {
-  await fetch("/admin/earn-blocks", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      password: pass.value,
-      blocks: JSON.parse(blocks.value)
+function loadUsers() {
+    fetch("/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: ADMIN_PASSWORD })
     })
-  });
-  alert("Saved");
+    .then(res => res.json())
+    .then(data => {
+        const tbody = document.getElementById("users");
+        tbody.innerHTML = "";
+        data.forEach(u => {
+            tbody.innerHTML += 
+                <tr>
+                    <td>${u.id}</td>
+                    <td>${u.email}</td>
+                    <td>${u.username}</td>
+                    <td>${u.score || 0}</td>
+                </tr>
+            ;
+        });
+    })
+    .catch(err => console.error(err));
 }
 
-async function wipe() {
-  if (!confirm("DELETE EVERYTHING?")) return;
-  await fetch("/admin/delete-all", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ password: pass.value })
-  });
-  alert("Deleted");
+// ==================== Earn Editor ====================
+
+function showEarnEditor() {
+    document.getElementById("earn-editor").style.display = "block";
+    renderEarnBlocks();
+}
+
+function renderEarnBlocks() {
+    const container = document.getElementById("earn-blocks-container");
+    container.innerHTML = "";
+
+    earnBlocks.forEach((block, index) => {
+        if(!block) block = {};
+        const blockEl = document.createElement("div");
+        blockEl.className = "earn-block";
+
+        blockEl.innerHTML = 
+            <h3>Block ${index+1}</h3>
+            <label>Title: <input type="text" value="${block.title || ''}" onchange="updateBlock(${index}, 'title', this.value)"></label><br>
+            <label>Reward (score): <input type="number" value="${block.reward || ''}" onchange="updateBlock(${index}, 'reward', Number(this.value))"></label><br>
+            <label>Icon/Emoji: <input type="text" value="${block.icon || ''}" onchange="updateBlock(${index}, 'icon', this.value)"></label><br>
+            <label>Link: <input type="text" value="${block.link || ''}" onchange="updateBlock(${index}, 'link', this.value)"></label><br>
+            <div class="earn-controls">
+                <button onclick="moveBlockLeft(${index})">← Left</button>
+                <button onclick="moveBlockRight(${index})">Right →</button>
+            </div>
+        ;
+
+        container.appendChild(blockEl);
+    });
+}
+
+function updateBlock(index, key, value) {
+    if (!earnBlocks[index]) earnBlocks[index] = {};
+    earnBlocks[index][key] = value;
+}
+
+// Гортання блоків
+function moveBlockLeft(index) {
+    if (index === 0) return;
+    [earnBlocks[index-1], earnBlocks[index]] = [earnBlocks[index], earnBlocks[index-1]];
+    renderEarnBlocks();
+}
+
+function moveBlockRight(index) {
+    if (index === MAX_BLOCKS-1) return;
+    [earnBlocks[index+1], earnBlocks[index]] = [earnBlocks[index], earnBlocks[index+1]];
+    renderEarnBlocks();
+}
+
+// ==================== Збереження ====================
+
+function saveEarnBlocks() {
+    fetch("/admin/earn-blocks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: ADMIN_PASSWORD, blocks: earnBlocks })
+    })
+    .then(res => {
+        if(res.ok) alert("✅ Blocks saved successfully!");
+        else alert("❌ Error saving blocks");
+    })
+    .catch(err => console.error(err));
+}
+
+// Завантаження блоків з сервера
+function loadEarnBlocks() {
+    fetch("/earn-blocks")
+    .then(res => res.json())
+    .then(data => {
+        earnBlocks = Array(MAX_BLOCKS).fill(null);
+        if(Array.isArray(data)){
+            for(let i=0;i<data.length;i++){
+                earnBlocks[i] = data[i] || {};
+            }
+        }
+        renderEarnBlocks();
+    })
+    .catch(err => console.error(err));
 }
 </script>
 
