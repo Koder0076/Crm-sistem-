@@ -34,10 +34,6 @@ button { cursor:pointer; }
     display:flex;
     gap:5px;
 }
-
-img {
-    image-rendering: pixelated;
-}
 </style>
 </head>
 
@@ -56,10 +52,6 @@ img {
 
     <button onclick="saveBlocks()" style="background:#0f0;color:#000">
         💾 Save All
-    </button>
-
-    <button onclick="deleteEarnBlocks()" style="background:#f00;color:#000">
-        🗑️ Delete ALL Earn Blocks
     </button>
 </div>
 
@@ -96,24 +88,16 @@ function render() {
         box.innerHTML += `
         <div class="earn-block">
             <h3>Block ${i+1}</h3>
-
             <input placeholder="Title" value="${b.title||""}"
                 onchange="upd(${i},'title',this.value)">
-
             <input type="number" placeholder="Reward" value="${b.reward||""}"
                 onchange="upd(${i},'reward',Number(this.value))">
-
             <input placeholder="Link" value="${b.link||""}"
                 onchange="upd(${i},'link',this.value)">
-
-            <input type="number" placeholder="Hours (lifetime)"
-                value="${b.hours||""}"
-                onchange="upd(${i},'hours',Number(this.value))">
-
             <input type="file" accept="image/*"
                 onchange="icon(event,${i})">
 
-            ${b.icon ? `<img src="${b.icon}" width="32" height="32">` : ""}
+            ${b.icon?`<img src="${b.icon}" width="32">`:""}
 
             <div class="earn-controls">
                 <button onclick="move(${i},-1)">←</button>
@@ -129,35 +113,9 @@ function upd(i,k,v){
 }
 
 function icon(e,i){
-    const file = e.target.files[0];
-    if(!file) return;
-
-    const img = new Image();
-    const r = new FileReader();
-
-    r.onload = ev => {
-        img.onload = () => {
-            const size = 32;
-            const canvas = document.createElement("canvas");
-            canvas.width = size;
-            canvas.height = size;
-            const ctx = canvas.getContext("2d");
-
-            ctx.clearRect(0,0,size,size);
-
-            const scale = Math.min(size/img.width, size/img.height);
-            const w = img.width * scale;
-            const h = img.height * scale;
-
-            ctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
-
-            upd(i,"icon",canvas.toDataURL("image/png"));
-            render();
-        };
-        img.src = ev.target.result;
-    };
-
-    r.readAsDataURL(file);
+    const r=new FileReader();
+    r.onload=()=>{ upd(i,"icon",r.result); render(); };
+    r.readAsDataURL(e.target.files[0]);
 }
 
 function move(i,d){
@@ -168,42 +126,14 @@ function move(i,d){
 }
 
 function saveBlocks(){
-    const now = Date.now();
-
-    const prepared = earnBlocks.map(b=>{
-        if(!b) return null;
-        if(b.hours){
-            b.expiresAt = now + b.hours * 60 * 60 * 1000;
-        }
-        return b;
-    });
-
     fetch("/admin/earn-blocks",{
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
             password:ADMIN_PASSWORD,
-            blocks:prepared
+            blocks:earnBlocks
         })
     }).then(()=>alert("✅ Saved"));
-}
-
-function deleteEarnBlocks(){
-    if(!confirm("Delete ALL Earn Blocks?")) return;
-
-    fetch("/admin/earn-blocks/delete",{
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ password:ADMIN_PASSWORD })
-    })
-    .then(r=>r.json())
-    .then(d=>{
-        if(d.ok){
-            earnBlocks = Array(MAX_BLOCKS).fill(null);
-            render();
-            alert("✅ Earn Blocks deleted");
-        }
-    });
 }
 </script>
 
