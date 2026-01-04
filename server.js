@@ -284,6 +284,32 @@ app.post("/admin/delete-all", async (req, res) => {
   }
 });
 
+/* ===== DOWNLOAD USERS INFO ===== */
+app.post("/admin/download-users", async (req, res) => {
+  const { password } = req.body;
+  if (password !== ADMIN_PASSWORD)
+    return res.status(403).json({ error: "forbidden" });
+
+  try {
+    const result = await pool.query(`
+      SELECT users.id, users.email, users.username, scores.score
+      FROM users
+      LEFT JOIN scores ON users.id = scores.user_id
+      ORDER BY users.id
+    `);
+
+    const usersData = result.rows;
+
+    // Відправляємо як JSON-файл
+    res.setHeader('Content-Disposition', 'attachment; filename="users_info.json"');
+    res.setHeader('Content-Type', 'application/json');
+    res.send(JSON.stringify(usersData, null, 2));
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ ok: false });
+  }
+});
+
 /* ===== START SERVER ===== */
 app.listen(PORT, () =>
   console.log("🚀 Server running on", PORT)

@@ -114,6 +114,9 @@ function render() {
                 onchange="icon(event,${i})">
 
             ${b.icon ? `<img src="${b.icon}" width="32" height="32">` : ""}
+            <div id="timer-${i}" style="font-size:14px; color:#ff0">
+                ${b.expiresAt ? formatRemaining(b.expiresAt - Date.now()) : ""}
+            </div>
 
             <div class="earn-controls">
                 <button onclick="move(${i},-1)">←</button>
@@ -205,6 +208,30 @@ function deleteEarnBlocks(){
         }
     });
 }
+
+// ====== Таймери ======
+
+// Функція форматування залишкового часу
+function formatRemaining(ms) {
+    if(ms <= 0) return "⏰ Expired";
+    const totalSec = Math.floor(ms/1000);
+    const h = Math.floor(totalSec/3600);
+    const m = Math.floor((totalSec%3600)/60);
+    const s = totalSec%60;
+    return `${h}h ${m}m ${s}s`;
+}
+
+// Живий таймер, оновлюється кожну секунду
+setInterval(()=>{
+    earnBlocks.forEach((b,i)=>{
+        if(!b || !b.expiresAt) return;
+        const el = document.getElementById(`timer-${i}`);
+        if(el){
+            el.textContent = formatRemaining(b.expiresAt - Date.now());
+        }
+    });
+}, 1000);
+
 </script>
 
 </body>
