@@ -1,3 +1,4 @@
+Програмувальні питання:
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -24,35 +25,35 @@ const pool = new Pool({
 
 /* ===== INIT DB ===== */
 async function initDB() {
-  await pool.query(`
+  await pool.query(
     CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY,
+      id SERIAL PRIMARY KEY,
       email TEXT UNIQUE,
       username TEXT
     )
-  `);
+  );
 
-  await pool.query(`
+  await pool.query(
     CREATE TABLE IF NOT EXISTS scores (
       user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
       score INTEGER DEFAULT 0
     )
-  `);
+  );
 
-  await pool.query(`
+  await pool.query(
     CREATE TABLE IF NOT EXISTS earn_blocks (
       id SERIAL PRIMARY KEY,
       data JSONB
     )
-  `);
+  );
 
-  await pool.query(`
+  await pool.query(
     CREATE TABLE IF NOT EXISTS earn_done (
       user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
       block_id INTEGER,
       PRIMARY KEY (user_id, block_id)
     )
-  `);
+  );
 
   console.log("✅ Database ready");
 }
@@ -68,7 +69,6 @@ app.post("/register", async (req, res) => {
   if (!email || !user) return res.status(400).json({ ok: false });
 
   try {
-    // перевіряємо чи користувач вже існує
     const exists = await pool.query(
       "SELECT id FROM users WHERE email = $1",
       [email]
@@ -76,24 +76,18 @@ app.post("/register", async (req, res) => {
     if (exists.rows.length)
       return res.json({ ok: false, error: "exists" });
 
-    // отримуємо останній id
-    const lastIdResult = await pool.query("SELECT MAX(id) AS max_id FROM users");
-    const lastId = lastIdResult.rows[0].max_id || 0;
-    const newId = lastId + 1;
-
-    // вставляємо нового користувача з конкретним id
-    await pool.query(
-      "INSERT INTO users (id, email, username) VALUES ($1, $2, $3)",
-      [newId, email, user]
+    const result = await pool.query(
+      "INSERT INTO users (email, username) VALUES ($1, $2) RETURNING id",
+      [email, user]
     );
 
-    // ініціалізуємо очки
+    const uid = result.rows[0].id;
     await pool.query(
       "INSERT INTO scores (user_id, score) VALUES ($1, 0)",
-      [newId]
+      [uid]
     );
 
-    res.json({ ok: true, id: newId });
+    res.json({ ok: true, id: uid });
   } catch (e) {
     console.error(e);
     res.status(500).json({ ok: false });
@@ -118,7 +112,7 @@ app.get("/score/:uid", async (req, res) => {
 /* ===== ADD SCORE ===== */
 app.post("/score", async (req, res) => {
   const { id, score } = req.body;
-  if (!id || score === undefined || score === null)
+  if (!id  score === undefined  score === null)
     return res.status(400).json({ ok: false });
 
   try {
@@ -142,12 +136,12 @@ app.post("/admin/users", async (req, res) => {
     return res.status(403).json({ error: "forbidden" });
 
   try {
-    const result = await pool.query(`
+    const result = await pool.query(
       SELECT users.id, users.email, users.username, scores.score
       FROM users
       LEFT JOIN scores ON users.id = scores.user_id
       ORDER BY users.id
-    `);
+    );
     res.json(result.rows);
   } catch (e) {
     console.error(e);
@@ -173,7 +167,7 @@ app.post("/admin/earn-blocks", async (req, res) => {
   if (password !== ADMIN_PASSWORD)
     return res.status(403).json({ error: "forbidden" });
 
-  try {
+try {
     await pool.query("DELETE FROM earn_blocks");
     for (const block of blocks) {
       await pool.query(
